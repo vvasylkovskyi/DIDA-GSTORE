@@ -1,7 +1,7 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DIDA-GSTORE", "dida-gstore\dida-gstore.csproj", "{62D267E2-E993-43A2-934E-71DCBCE7D510}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DIDA-GSTORE", "dida-gstore.csproj", "{62D267E2-E993-43A2-934E-71DCBCE7D510}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

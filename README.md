@@ -6,7 +6,7 @@
 Open project at the root folder and type 
 `dotnet run`
 
-## Publish a Server or a Client
+## Publish Server/Client
 
 To produce the executable file from Client or Server projects (the one to be used to start the process), you need to **publish** a project. To do so, run the following command
 

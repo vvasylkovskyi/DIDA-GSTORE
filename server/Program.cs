@@ -7,7 +7,7 @@ namespace server
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Console.WriteLine("Hello World Server!");
         }
 
         public void getStatus()

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-
+using System.IO;
 namespace processCreationService
 {
     public class Program : IProcessCreationService
@@ -20,13 +20,17 @@ namespace processCreationService
         public void StartServer(string args)
         {
             Console.WriteLine(">>> Starting Server: " + args);
-            processesList.Add(Process.Start("../server/bin/Debug/netcoreapp3.1/server.dll", args));
+            string directory = Directory.GetCurrentDirectory();
+            string path = System.IO.Path.Combine(directory, "../server/bin/Release/netcoreapp3.1/server");
+            processesList.Add(Process.Start(path, args));
         }
 
         public void StartClient(string args)
         {
             Console.WriteLine(">>> Starting Client: " + args);
-            processesList.Add(Process.Start("../client/bin/Debug/netcoreapp3.1/client.dll", args));
+            string directory = Directory.GetCurrentDirectory();
+            string path = System.IO.Path.Combine(directory, "../client/bin/Release/netcoreapp3.1/client");
+            processesList.Add(Process.Start(path, args));
         }
 
         public void ShutdownAllProcesses()

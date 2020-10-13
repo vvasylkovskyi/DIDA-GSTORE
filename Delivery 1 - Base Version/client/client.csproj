@@ -1,12 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <StartupObject>Client.Program</StartupObject>
   </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Shared\Shared.csproj">
-      <Name>Shared</Name>
-    </ProjectReference>
-  </ItemGroup>
+
+  <Import Project="..\Shared\Shared.projitems" Label="Shared" />
+
 </Project>

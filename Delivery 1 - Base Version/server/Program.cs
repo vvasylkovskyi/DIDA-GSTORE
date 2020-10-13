@@ -1,18 +1,12 @@
 ﻿using System;
-using Shared;
 
-namespace server
+namespace Server
 {
-    class Program : IServerClientCommands
+    class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World Server!");
-        }
-
-        public void getStatus()
-        {
-            Console.WriteLine(">>> Status");
+            Console.WriteLine("Hello! I'm the server");
         }
     }
 }

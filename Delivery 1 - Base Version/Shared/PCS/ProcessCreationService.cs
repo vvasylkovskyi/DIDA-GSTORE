@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-namespace processCreationService
+
+namespace Shared.PCS
 {
-    public class Program : IProcessCreationService
+    public class ProcessCreationService : IProcessCreationService
     {
         List<Process> processesList = new List<Process>();
         static void Main(string[] args)
         {
-            new Program().Init(args);
+            new ProcessCreationService().Init(args);
         }
 
         private void Init(string[] args)

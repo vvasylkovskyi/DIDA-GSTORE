@@ -1,6 +1,10 @@
-namespace Shared
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Shared.Interfaces
 {
-    public interface IServerClientCommands
+    interface IServerClientCommands
     {
         void getStatus();
     }

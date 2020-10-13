@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using processCreationService;
-using Shared;
-using server;
+using Shared.Interfaces;
+using Shared.PCS;
 
-namespace puppetMaster
+namespace PuppetMaster
 {
     class Program
     {
@@ -112,7 +111,7 @@ namespace puppetMaster
 
         private void StartServerProcess(string serverId, string url, string minDelay, string maxDelay)
         {
-            string argsString = Shared.Program.BuildArgumentsString(serverId, minDelay, maxDelay);
+            string argsString = Shared.Utilities.BuildArgumentsString(serverId, minDelay, maxDelay);
             Console.WriteLine(">>> PCS Starting on url: " + url);
             Console.WriteLine(">>> With Args: " + argsString);
             CheckPCSConnection(url);
@@ -123,7 +122,7 @@ namespace puppetMaster
 
         private void StartClientProcess(string username, string clientUrl, string scriptFile)
         {
-            string argsString = Shared.Program.BuildArgumentsString(username, clientUrl, scriptFile);
+            string argsString = Shared.Utilities.BuildArgumentsString(username, clientUrl, scriptFile);
             Console.WriteLine(">>> PCS Starting on url: " + clientUrl);
             Console.WriteLine(">>> With Args: " + argsString);
             CheckPCSConnection(clientUrl);
@@ -133,7 +132,7 @@ namespace puppetMaster
 
         private void SaveServerProgram(string url)
         {
-            IServerClientCommands program = (IServerClientCommands)Activator.CreateInstance<processCreationService.Program>();
+            IServerClientCommands program = (IServerClientCommands)Activator.CreateInstance<ProcessCreationService>();
             if (program == null)
             {
                 Console.WriteLine("Process was not found");
@@ -149,7 +148,7 @@ namespace puppetMaster
             if (!processCreationServiceDictionary.ContainsKey(url))
             {
                 Console.WriteLine(">>> Starting new PCS with url: " + url);
-                processCreationServiceDictionary.Add(url, Activator.CreateInstance<processCreationService.Program>());
+                processCreationServiceDictionary.Add(url, Activator.CreateInstance<ProcessCreationService>());
             }
         }
 

@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace client
+namespace Client
 {
     class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World Client!");
+            Console.WriteLine("Hello! I'm the client");
         }
     }
 }

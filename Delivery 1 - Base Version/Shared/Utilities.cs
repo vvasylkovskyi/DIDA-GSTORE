@@ -2,13 +2,8 @@
 
 namespace Shared
 {
-    public static class Program
+    public static class Utilities
     {
-        static void Main(string[] args)
-        {
-
-        }
-
         public static string BuildArgumentsString(params string[] args)
         {
             StringBuilder strinbuilder = new StringBuilder();

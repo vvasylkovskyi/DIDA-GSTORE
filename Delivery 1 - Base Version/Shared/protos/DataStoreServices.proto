@@ -1,0 +1,51 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "Shared.GrpcDataStore";
+
+// ----------- Data Store Service -----------
+
+service DataStoreService {
+  rpc Read (ReadRequest) returns (ReadReply);
+  rpc Write (WriteRequest) returns (WriteReply);
+}
+
+// Data Store Domain DTO's
+
+message DataStoreKeyDto {
+  int32 partition_id = 1;
+  int64 object_id = 2;
+}
+
+message DataStoreValueDto {
+  string string_val = 1;
+}
+
+// Read
+
+message ReadRequest {
+  DataStoreKeyDto key = 1;
+}
+
+message ReadReply {
+  DataStoreValueDto val = 1;
+  bool val_exists = 2;
+}
+
+// Write
+
+message WriteRequest {
+  DataStoreKeyDto key = 1;
+  DataStoreValueDto val = 2;
+}
+
+message WriteReply {
+  int32 status = 1;
+}
+
+// ----------- PCS Service -----------
+
+/*
+service ProcessCreationService {
+  rpc Read (ReadRequest) returns (ReadReply);
+}
+*/

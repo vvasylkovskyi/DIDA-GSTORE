@@ -8,4 +8,13 @@
 
   <Import Project="..\Shared\Shared.projitems" Label="Shared" />
 
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.13.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.32.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+	<Protobuf Include="..\Shared\protos\DataStoreServices.proto" GrpcServices="None" />
+  </ItemGroup>
+
 </Project>

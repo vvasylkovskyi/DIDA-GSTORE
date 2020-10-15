@@ -84,11 +84,7 @@ namespace DataStoreClient
         {
             DataStoreValue result;
 
-            var key = new DataStoreKey()
-            {
-                object_id = object_id,
-                partition_id = partition_id
-            };
+            var key = new DataStoreKey(partition_id, object_id);
 
             //reply = attached_server.read()
             //if (reply.ok)

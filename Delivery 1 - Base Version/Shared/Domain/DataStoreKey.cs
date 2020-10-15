@@ -7,8 +7,19 @@ namespace Shared.Domain
 {
     public class DataStoreKey : IEquatable<DataStoreKey>
     {
-        public int partition_id { get; set; }
-        public long object_id { get; set; }
+        // attributes read-only so we can get a proper custom hash function
+        // explanation:
+        // the hash needs to be the same over the lifetime of the object, and the
+        // simplest way to do that is to make the attributes read-only
+
+        public int partition_id { get; }
+        public long object_id { get; }
+
+        public DataStoreKey(int partition_id, long object_id)
+        {
+            this.partition_id = partition_id;
+            this.object_id = object_id;
+        }
 
         public override bool Equals(object obj)
         {
@@ -35,8 +46,11 @@ namespace Shared.Domain
         public override int GetHashCode()
         {
             // Constant because equals tests mutable member.
-            // This will give poor hash performance, but will prevent bugs.
-            return 0;
+            // Making it return 0 will give poor hash performance, but will prevent bugs.
+            int hash = 17;
+            hash = hash * 23 + this.partition_id.GetHashCode();
+            hash = hash * 23 + this.object_id.GetHashCode();
+            return hash;
         }
     }
 }

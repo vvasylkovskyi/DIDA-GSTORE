@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Shared.Interfaces;
 using Shared.PCS;
+using Shared.Util;
 
 namespace PuppetMaster
 {
@@ -111,7 +112,7 @@ namespace PuppetMaster
 
         private void StartServerProcess(string serverId, string url, string minDelay, string maxDelay)
         {
-            string argsString = Shared.Utilities.BuildArgumentsString(serverId, minDelay, maxDelay);
+            string argsString = Utilities.BuildArgumentsString(serverId, minDelay, maxDelay);
             Console.WriteLine(">>> PCS Starting on url: " + url);
             Console.WriteLine(">>> With Args: " + argsString);
             CheckPCSConnection(url);
@@ -122,7 +123,7 @@ namespace PuppetMaster
 
         private void StartClientProcess(string username, string clientUrl, string scriptFile)
         {
-            string argsString = Shared.Utilities.BuildArgumentsString(username, clientUrl, scriptFile);
+            string argsString = Utilities.BuildArgumentsString(username, clientUrl, scriptFile);
             Console.WriteLine(">>> PCS Starting on url: " + clientUrl);
             Console.WriteLine(">>> With Args: " + argsString);
             CheckPCSConnection(clientUrl);

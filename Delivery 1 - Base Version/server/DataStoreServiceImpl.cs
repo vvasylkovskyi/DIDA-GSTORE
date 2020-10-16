@@ -24,26 +24,26 @@ namespace DataStoreServer
         public ReadReply ReadHandler(ReadRequest request)
         {
             ReadReply result;
-            DataStoreKey key = Utilities.ConvertKeyDtoToDomain(request.Key);
+            DataStoreKey key = Utilities.ConvertKeyDtoToDomain(request.ObjectKey);
             bool value_exists = database.dataStore.ContainsKey(key);
 
             if (value_exists)
             {
                 result = new ReadReply
                 {
-                    Val = Utilities.ConvertValueDomainToDto(database.dataStore[key]),
-                    ValExists = true
+                    Object = Utilities.ConvertValueDomainToDto(database.dataStore[key]),
+                    ObjectExists = true
                 };
             }
             else
             {
                 result = new ReadReply
                 {
-                    Val = new DataStoreValueDto
+                    Object = new DataStoreValueDto
                     {
-                        StringVal = ""
+                        Val = ""
                     },
-                    ValExists = false
+                    ObjectExists = false
                 };
             }
 
@@ -59,13 +59,13 @@ namespace DataStoreServer
         {
             lock (database)
             {
-                DataStoreKey key = Utilities.ConvertKeyDtoToDomain(request.Key);
-                DataStoreValue val = Utilities.ConvertValueDtoToDomain(request.Val);
+                DataStoreKey key = Utilities.ConvertKeyDtoToDomain(request.ObjectKey);
+                DataStoreValue val = Utilities.ConvertValueDtoToDomain(request.Object);
                 database.dataStore.Add(key, val);
             }
             return new WriteReply
             {
-                Status = 200
+                WriteStatus = 200
             };
         }
 

@@ -17,29 +17,29 @@ message DataStoreKeyDto {
 }
 
 message DataStoreValueDto {
-  string string_val = 1;
+  string val = 1;
 }
 
 // Read
 
 message ReadRequest {
-  DataStoreKeyDto key = 1;
+  DataStoreKeyDto object_key = 1;
 }
 
 message ReadReply {
-  DataStoreValueDto val = 1;
-  bool val_exists = 2;
+  DataStoreValueDto object = 1;
+  bool object_exists = 2;
 }
 
 // Write
 
 message WriteRequest {
-  DataStoreKeyDto key = 1;
-  DataStoreValueDto val = 2;
+  DataStoreKeyDto object_key = 1;
+  DataStoreValueDto object = 2;
 }
 
 message WriteReply {
-  int32 status = 1;
+  int32 write_status = 1;
 }
 
 // ----------- PCS Service -----------

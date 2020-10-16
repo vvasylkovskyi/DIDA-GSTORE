@@ -35,7 +35,7 @@ namespace Shared.Util
         {
             Domain.DataStoreValue domain_value = new Domain.DataStoreValue
             {
-                val = dto_value.StringVal
+                val = dto_value.Val
             };
             return domain_value;
         }
@@ -44,7 +44,7 @@ namespace Shared.Util
         {
             GrpcDataStore.DataStoreValueDto dto_value = new GrpcDataStore.DataStoreValueDto
             {
-                StringVal = domain_value.val
+                Val = domain_value.val
             };
             return dto_value;
         }

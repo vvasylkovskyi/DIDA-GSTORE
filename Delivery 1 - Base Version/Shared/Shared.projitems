@@ -14,10 +14,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)Interfaces\IServerClientCommands.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PCS\IProcessCreationService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PCS\ProcessCreationService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Util\ServerMapping.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)Util\" />
     <Folder Include="$(MSBuildThisFileDirectory)PCS\" />
   </ItemGroup>
   <ItemGroup>

@@ -7,6 +7,8 @@ option csharp_namespace = "Shared.GrpcDataStore";
 service DataStoreService {
   rpc Read (ReadRequest) returns (ReadReply);
   rpc Write (WriteRequest) returns (WriteReply);
+  rpc lock (lockRequest) returns (lockReply);
+  rpc WriteNewValue (NewValueRequest) returns (NewValueReplay);
 }
 
 // Data Store Domain DTO's
@@ -19,7 +21,6 @@ message DataStoreKeyDto {
 message DataStoreValueDto {
   string val = 1;
 }
-
 // Read
 
 message ReadRequest {
@@ -41,6 +42,25 @@ message WriteRequest {
 message WriteReply {
   int32 write_status = 1;
 }
+
+// lock request
+message lockRequest{
+	
+}
+
+message lockReply{
+
+}
+
+// replica write request
+message NewValueRequest{
+	WriteRequest value =1;
+}
+
+message NewValueReplay{
+	bool ok =1;
+}
+
 
 // ----------- PCS Service -----------
 

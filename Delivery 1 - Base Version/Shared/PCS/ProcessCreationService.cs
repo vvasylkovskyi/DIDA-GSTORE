@@ -8,6 +8,7 @@ namespace Shared.PCS
     public class ProcessCreationService : IProcessCreationService
     {
         List<Process> processesList = new List<Process>();
+        
         static void Main(string[] args)
         {
             new ProcessCreationService().Init(args);
@@ -22,9 +23,9 @@ namespace Shared.PCS
         {
             Console.WriteLine(">>> Starting Server: " + args);
             string directory = Directory.GetCurrentDirectory();
-            string path = System.IO.Path.Combine(directory, "../server/bin/Release/netcoreapp3.1/server");
+            string path = System.IO.Path.Combine(directory, "../DataStoreServer/bin/Debug/netcoreapp3.1/DataStoreServer");
             processesList.Add(Process.Start(path, args));
-        }
+        } 
 
         public void StartClient(string args)
         {

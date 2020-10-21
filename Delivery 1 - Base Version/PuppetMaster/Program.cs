@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Shared.Interfaces;
 using Shared.PCS;
 using Shared.Util;
+using DataStoreServer;
 
 namespace PuppetMaster
 {
@@ -11,7 +12,7 @@ namespace PuppetMaster
     {
         #region private fields
         private Dictionary<string, IProcessCreationService> processCreationServiceDictionary = new Dictionary<string, IProcessCreationService>();
-        private Dictionary<string, IServerClientCommands> activators = new Dictionary<string, IServerClientCommands>();
+        private Dictionary<string, DataStoreServer.Program> activators = new Dictionary<string, DataStoreServer.Program>();
         #endregion
 
         #region Puppet Master
@@ -88,6 +89,7 @@ namespace PuppetMaster
                     break;
                 case "Crash":
                     string crashServerId = commandsList[1];
+                    Task.Run(() => CrashServer(crashServerId));
                     break;
                 case "Freeze":
                     string freezeServerId = commandsList[1];
@@ -101,12 +103,28 @@ namespace PuppetMaster
             }
         }
 
+        private void CrashServer(string serverId)
+        {
+            Console.WriteLine("Crashin Server: " + serverId);
+            DataStoreServer.Program server;
+            
+            if(!TryGetProgram(serverId, out server)) 
+            {
+                Console.WriteLine("Cannot find server");
+                return;
+            }
+
+            server.Crash();
+            activators.Remove(serverId);
+            
+        }
+
         private void getStatus()
         {
             Console.WriteLine(">>> Getting Processes Status");
             Parallel.ForEach(activators.Values, connection =>
             {
-                connection.getStatus();
+                //connection.getStatus();
             });
         }
 
@@ -133,7 +151,7 @@ namespace PuppetMaster
 
         private void SaveServerProgram(string url)
         {
-            IServerClientCommands program = (IServerClientCommands)Activator.CreateInstance<ProcessCreationService>();
+            DataStoreServer.Program program = (DataStoreServer.Program) Activator.CreateInstance<DataStoreServer.Program>();
             if (program == null)
             {
                 Console.WriteLine("Process was not found");
@@ -142,6 +160,11 @@ namespace PuppetMaster
             {
                 activators.Add(url, program);
             }
+        }
+
+        private bool TryGetProgram(string processId, out DataStoreServer.Program program)
+        {
+            return activators.TryGetValue(processId, out program);
         }
 
         private void CheckPCSConnection(string url)

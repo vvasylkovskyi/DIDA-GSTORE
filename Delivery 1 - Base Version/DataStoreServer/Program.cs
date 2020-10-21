@@ -6,8 +6,10 @@ using System.Collections.Generic;
 
 namespace DataStoreServer
 {
-    class Program
+    public class Program
     {
+        public Program() {}
+
         static void Main(string[] args)
         {
             Console.WriteLine("Hello! I'm the server");
@@ -23,6 +25,12 @@ namespace DataStoreServer
             Console.WriteLine("I'm ready to work");
             Console.ReadKey();
             server.ShutdownAsync().Wait();
+        }
+
+        public void Crash() 
+        {
+            Console.WriteLine("I am going to crash");
+            Environment.Exit(1);
         }
     }
 }

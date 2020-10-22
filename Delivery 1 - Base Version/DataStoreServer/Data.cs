@@ -27,21 +27,21 @@ namespace DataStoreServer
 
     public class Partition{
         private int id;
-        private List<Replica> replicas;
-        private Replica master;
+        private Dictionary<int, DataStoreService.DataStoreServiceClient> replicas;
+        private int master;
         private Data data = new Data();
 
-        public Partition(int id, List<Replica> replicas, Replica master) {
+        public Partition(int id, Dictionary<int, DataStoreService.DataStoreServiceClient> replicas, int master_id) {
             this.id = id;
             this.replicas = replicas;
-            this.master = master;
+            this.master = master_id;
         }
 
         public int getName() {
             return id;
         }
 
-        public List<Replica> getReplicas() {
+        public Dictionary<int, DataStoreService.DataStoreServiceClient> getReplicas() {
             return replicas;
         }
 
@@ -52,6 +52,7 @@ namespace DataStoreServer
             }
         }
 
+
         public DataStoreValueDto getData(DataStoreKeyDto key)
         {
             return data.getObject(key);
@@ -61,17 +62,21 @@ namespace DataStoreServer
             return data.objectExists(key);
         }
 
-        public override string ToString()
+        public int getMasterID() {
+            return master;
+        }
+
+       /* public override string ToString()
         {
             String resul = "";
             foreach (Replica replica in replicas) {
                 resul += replica.getID() + " " + replica.getIP() + " " + replica.getPort()+ " ";
             }
             return resul;
-        }
+        }*/
 
     }
-    public class Replica {
+  /*  public class Replica {
         private String server_ip;
         private int port;
         private int id;
@@ -93,7 +98,7 @@ namespace DataStoreServer
         public int getID() {
             return this.id;
         }
-    }
+    }*/
 
 
 }

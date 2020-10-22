@@ -1,4 +1,5 @@
-﻿using Shared.GrpcDataStore;
+﻿using Grpc.Net.Client;
+using Shared.GrpcDataStore;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -79,17 +80,58 @@ namespace DataStoreServer
             {
                 WriteRequest task = thrpool.remove();
                 Partition partition = server.getPartition(task.ObjectKey.PartitionId);
-                List<Replica> PartitionReplicas = partition.getReplicas();
-                partition.addData(task.ObjectKey, task.Object);
-                WriteReply replay = sendMessageToAllReplicas(task);
+                Dictionary<int, DataStoreService.DataStoreServiceClient> PartitionReplicas = partition.getReplicas();
+                WriteReply replay = sendMessageToAllReplicas(task, partition);
                 server.setWriteResult(task, replay);
             }
         }
 
-        public WriteReply sendMessageToAllReplicas(WriteRequest request) {
-            //send message to block object
+        public WriteReply sendMessageToAllReplicas(WriteRequest request, Partition partition) {
+            Dictionary<int, DataStoreService.DataStoreServiceClient> replicas = partition.getReplicas();
+            //foreach (int replica_id in replicas.Keys)
+            // {
+            /*AppContext.SetSwitch(
+                 "System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+             GrpcChannel channel = GrpcChannel.ForAddress("http://localhost:9080");
+             DataStoreService.DataStoreServiceClient client = new DataStoreService.DataStoreServiceClient(channel);*/
+
+            //}
             //send request to write
-            return null;
+            lockReplicas(replicas);
+            WriteReply reply = write_new_value(replicas, partition.getMasterID(), request);
+            return reply;
+        }
+
+        public void lockReplicas(Dictionary<int, DataStoreService.DataStoreServiceClient> replicas) {     
+            foreach (int replica_id in replicas.Keys){
+                    try{
+                            replicas[replica_id].LockServer(new lockRequest { });
+                    }
+                    catch (Exception e){
+                        Console.WriteLine(e.Message);
+                        replicas.Remove(replica_id);
+                    }
+
+            }
+        }
+
+        public WriteReply write_new_value(Dictionary<int, DataStoreService.DataStoreServiceClient> replicas, int master_id, WriteRequest request) {
+            foreach (int replica_id in replicas.Keys)
+            {
+                    try
+                    {
+                         replicas[replica_id].WriteNewValue(new NewValueRequest
+                         {
+                              Value = request
+                         });  
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                        replicas.Remove(replica_id);
+                    }
+            }
+            return new WriteReply { WriteStatus = 200};
         }
 
         public void start()

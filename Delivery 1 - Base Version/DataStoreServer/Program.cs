@@ -69,10 +69,15 @@ namespace DataStoreServer
                 foreach (Partition p in partitions) {
                     Console.WriteLine("Partition id: "+p.getID()+ " partition replicas "+p.ToString());
                 }*/
-            int server_id = int.Parse(args[1]);
-            String url = args[2];
-            int min_delay = int.Parse(args[3]);
-            int max_delay = int.Parse(args[4]);
+
+            if (args.Length < 4) {
+                Console.WriteLine("this program needs 4 arguments <server_id>, <URL>, <Min_delay>  and <Max_delay>");
+                return;
+            }
+            int server_id = int.Parse(args[0]);
+            String url = args[1];
+            int min_delay = int.Parse(args[2]);
+            int max_delay = int.Parse(args[3]);
             String host_name = url.Split(":")[0];
             int port = int.Parse(url.Split(":")[1]);
 

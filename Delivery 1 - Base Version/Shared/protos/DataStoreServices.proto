@@ -7,7 +7,7 @@ option csharp_namespace = "Shared.GrpcDataStore";
 service DataStoreService {
   rpc Read (ReadRequest) returns (ReadReply);
   rpc Write (WriteRequest) returns (WriteReply);
-  rpc lock (lockRequest) returns (lockReply);
+  rpc LockServer (lockRequest) returns (lockReply);
   rpc WriteNewValue (NewValueRequest) returns (NewValueReplay);
 }
 

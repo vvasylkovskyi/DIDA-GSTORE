@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace DataStoreServer
 {
-    class DataStoreServiceImpl : DataStoreService.DataStoreServiceBase
+    public class DataStoreServiceImpl : DataStoreService.DataStoreServiceBase
     {
         //private Data database;
         private List<Partition> partitions = new List<Partition>();
@@ -18,6 +18,7 @@ namespace DataStoreServer
         private int max_delay;
         private ThreadPool trhpool;
         private Dictionary<WriteRequest, WriteReply> writeResults = new Dictionary<WriteRequest, WriteReply>();
+        private bool isLocked = false;
 
         public DataStoreServiceImpl(int server_id, int min_delay, int max_delay) {
             this.server_id = server_id;
@@ -28,12 +29,18 @@ namespace DataStoreServer
 
         public Partition getPartition(int partition_id) {
             foreach (Partition p in partitions) {
-                if (p.getName()== partition_id) {
+                if (p.getName() == partition_id) {
                     return p;
                 }
             }
             return null;
         }
+
+        public int getID() {
+            return server_id;
+        }
+
+
 
         public override Task<ReadReply> Read(ReadRequest request, ServerCallContext context)
         {
@@ -83,11 +90,23 @@ namespace DataStoreServer
               return result;*/
             return null;
             }
+        public override Task<WriteReply> Write(WriteRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(WriteHandler(request));
+        }
+
+        public WriteReply WriteHandler(WriteRequest request)
+        {
+            trhpool.submit(request);
+            WriteReply reply = getWriteResult(request);
+            return reply;
+        }
+
 
         public WriteReply getWriteResult(WriteRequest request) {
             lock (writeResults) {
                 while (!writeResults.ContainsKey(request)) {
-                    Monitor.Wait(this);
+                    Monitor.Wait(writeResults);
                 }
             }
             return writeResults[request];
@@ -101,17 +120,27 @@ namespace DataStoreServer
 
         }
 
-        public override Task<WriteReply> Write(WriteRequest request, ServerCallContext context)
+
+        public override Task<lockReply> LockServer(lockRequest request, ServerCallContext context)
         {
-            return Task.FromResult(WriteHandler(request));
+            lock (this) {
+                while (this.isLocked) {
+                    Monitor.Wait(this);
+                }
+            }
+            return Task.FromResult(new lockReply());
         }
 
-        public WriteReply WriteHandler(WriteRequest request)
-        {
-            trhpool.submit(request);
-            WriteReply reply = getWriteResult(request);
-            return reply;
-        }
 
+        public override Task<NewValueReplay> WriteNewValue(NewValueRequest request, ServerCallContext context) {
+            Partition partion = getPartition(request.Value.ObjectKey.PartitionId);
+            partion.addData(request.Value.ObjectKey, request.Value.Object);
+            this.isLocked = false;
+            Monitor.PulseAll(this);
+            return Task.FromResult(new NewValueReplay
+            {
+                Ok = true
+            }) ;
+        }
     }
 }

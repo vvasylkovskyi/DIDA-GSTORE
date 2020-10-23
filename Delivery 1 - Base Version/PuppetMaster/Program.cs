@@ -93,9 +93,11 @@ namespace PuppetMaster
                     break;
                 case "Freeze":
                     string freezeServerId = commandsList[1];
+                    Task.Run(() => FreezServer(freezeServerId));
                     break;
                 case "Unfreeze":
                     string unfreezeServerId = commandsList[1];
+                    Task.Run(() => UnfreezServer(unfreezeServerId));
                     break;
                 case "Wait":
                     string timeMs = commandsList[1];
@@ -103,9 +105,36 @@ namespace PuppetMaster
             }
         }
 
+        private void UnfreezServer(string serverId) 
+        {
+            Console.WriteLine("Unfreezing Server: " + serverId);
+            DataStoreServer.Program server;
+            
+            if(!TryGetProgram(serverId, out server)) 
+            {
+                Console.WriteLine("Cannot find server");
+                return;
+            }
+
+            server.Unfreez();            
+        }
+        private void FreezServer(string serverId) 
+        {
+            Console.WriteLine("Freezing Server: " + serverId);
+            DataStoreServer.Program server;
+            
+            if(!TryGetProgram(serverId, out server)) 
+            {
+                Console.WriteLine("Cannot find server");
+                return;
+            }
+
+            server.Freez();
+        }
+
         private void CrashServer(string serverId)
         {
-            Console.WriteLine("Crashin Server: " + serverId);
+            Console.WriteLine("Crashing Server: " + serverId);
             DataStoreServer.Program server;
             
             if(!TryGetProgram(serverId, out server)) 
@@ -124,7 +153,7 @@ namespace PuppetMaster
             Console.WriteLine(">>> Getting Processes Status");
             Parallel.ForEach(activators.Values, connection =>
             {
-                //connection.getStatus();
+                connection.getStatus();
             });
         }
 
@@ -136,7 +165,7 @@ namespace PuppetMaster
             CheckPCSConnection(url);
             processCreationServiceDictionary[url].StartServer(argsString);
 
-            SaveServerProgram(url);
+            SaveServerProgram(serverId, url);
         }
 
         private void StartClientProcess(string username, string clientUrl, string scriptFile)
@@ -149,7 +178,7 @@ namespace PuppetMaster
 
         }
 
-        private void SaveServerProgram(string url)
+        private void SaveServerProgram(string serverId, string url)
         {
             DataStoreServer.Program program = (DataStoreServer.Program) Activator.CreateInstance<DataStoreServer.Program>();
             if (program == null)
@@ -158,6 +187,7 @@ namespace PuppetMaster
             }
             else
             {
+                program.setServerId(serverId);
                 activators.Add(url, program);
             }
         }

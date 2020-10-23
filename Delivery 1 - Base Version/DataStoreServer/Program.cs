@@ -1,5 +1,4 @@
 ﻿using Grpc.Core;
-using Shared.Domain;
 using Shared.GrpcDataStore;
 using System;
 using System.Collections.Generic;
@@ -8,12 +7,13 @@ namespace DataStoreServer
 {
     public class Program
     {
+        private bool _isFrozen = false;
+        private string serverId = "";
         public Program() {}
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello! I'm the server");
-
+            Console.WriteLine("Hello! I'm the server " + args[0]);
 
             Data database = new Data();
             Server server = new Server
@@ -27,10 +27,34 @@ namespace DataStoreServer
             server.ShutdownAsync().Wait();
         }
 
+        public void getStatus() 
+        {
+            Console.WriteLine("Printing status...");
+            Console.WriteLine("I am server");
+            Console.WriteLine("My id: " + serverId);   
+        }
+
         public void Crash() 
         {
             Console.WriteLine("I am going to crash");
             Environment.Exit(1);
+        }
+
+        public void Freez() 
+        {
+            Console.WriteLine("I am going to freeze");
+            _isFrozen = true;
+        }
+
+        public void Unfreez()
+        {
+            Console.WriteLine("I am going to unfreeze");
+            _isFrozen = false;
+        }
+
+        public void setServerId(string serverId) 
+        {
+            this.serverId = serverId;
         }
     }
 }

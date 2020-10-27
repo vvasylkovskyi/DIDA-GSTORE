@@ -63,19 +63,19 @@ namespace DataStoreClient
                     write(int.Parse(commandsList[1]), long.Parse(commandsList[2]), objectValue);
                     break;
                 case "listServer":
-                    
+
                     break;
                 case "listGlobal":
-                    
+
                     break;
                 case "wait":
-                    
+
                     break;
                 case "begin-repeat":
-                    
+
                     break;
                 case "end-repeat":
-                    
+
                     break;
                 case "help":
                     showHelp();
@@ -118,7 +118,7 @@ namespace DataStoreClient
             }
 
             // if theres no result yet and there is a valid server_id parameter
-            if (( !got_result ) && ( !server_id.Equals("-1") ))
+            if ((!got_result) && (!server_id.Equals("-1")))
             {
                 // read value from alternative server
                 reattachServer(server_id);
@@ -186,10 +186,10 @@ namespace DataStoreClient
 
             Console.WriteLine("Available commands are:");
 
-            foreach(var command in commands)
+            foreach (var command in commands)
             {
                 Console.Write("  {0}", command.Key);
-                
+
                 for (int i = command.Key.Length; i < 15; i++)
                 {
                     Console.Write(" ");

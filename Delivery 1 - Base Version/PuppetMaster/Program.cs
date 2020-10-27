@@ -60,6 +60,13 @@ namespace PuppetMaster
                     Environment.Exit(1);
                     break;
                 case "ReplicationFactor":
+                    string r = commandsList[1];
+                    int rNumber;
+                    if (int.TryParse(r, out rNumber) == false)
+                    {
+                        Console.WriteLine(" >>> Invalid Argument. First Replicas Number should be a number");
+                    }
+                    Task.Run(() => UpdateReplicasNumber(rNumber));
                     break;
                 case "Server":
                     string serverId = commandsList[1];
@@ -69,14 +76,34 @@ namespace PuppetMaster
                     Task.Run(() => StartServerProcess(serverId, url, minDelay, maxDelay));
                     break;
                 case "Partition":
-                    string replicasNumber = commandsList[1];
+                    string replicasNumberString = commandsList[1];
                     string partitionName = commandsList[2];
                     List<string> serverIds = new List<string>();
+
+                    int serversNumber = 0;
+                    int replicasNumber = 0;
+                    if (int.TryParse(replicasNumberString, out replicasNumber) == false)
+                    {
+                        Console.WriteLine(">>> Invalid Argument. First argument should be a number");
+                        break;
+                    }
+
                     for (int i = 3; i < commandsList.Length; i++)
                     {
-                        serverIds.Add(commandsList[i]);
-                        Console.WriteLine(" >>> Adding server " + commandsList[i]);
+                        if (commandsList[i] != "")
+                        {
+                            serverIds.Add(commandsList[i]);
+                            serversNumber++;
+                            Console.WriteLine(">>> Adding server " + commandsList[i]);
+                        }
                     }
+
+                    if (serversNumber != replicasNumber)
+                    {
+                        Console.WriteLine(">>> Invalid number of servers, should have " + replicasNumber + " servers but " + serversNumber + " were given");
+                        break;
+                    }
+                    CreatePartition(replicasNumber, partitionName, serverIds.ToArray());
                     break;
                 case "Client":
                     string username = commandsList[1];
@@ -105,25 +132,37 @@ namespace PuppetMaster
             }
         }
 
-        private void UnfreezServer(string serverId) 
+        private void UpdateReplicasNumber(int replicasNumber)
+        {
+            ServerMapping.UpdateReplicasNumber(replicasNumber);
+        }
+
+        private void CreatePartition(int replicasNumber, string partitionName, string[] serverIds)
+        {
+            Console.WriteLine(">>> Creating a Partition " + partitionName);
+            ServerMapping.UpdateReplicasNumber(replicasNumber);
+            ServerMapping.AddPartition(partitionName, serverIds);
+        }
+
+        private void UnfreezServer(string serverId)
         {
             Console.WriteLine("Unfreezing Server: " + serverId);
             DataStoreServer.Program server;
-            
-            if(!TryGetProgram(serverId, out server)) 
+
+            if (!TryGetProgram(serverId, out server))
             {
                 Console.WriteLine("Cannot find server");
                 return;
             }
 
-            server.Unfreez();            
+            server.Unfreez();
         }
-        private void FreezServer(string serverId) 
+        private void FreezServer(string serverId)
         {
             Console.WriteLine("Freezing Server: " + serverId);
             DataStoreServer.Program server;
-            
-            if(!TryGetProgram(serverId, out server)) 
+
+            if (!TryGetProgram(serverId, out server))
             {
                 Console.WriteLine("Cannot find server");
                 return;
@@ -136,8 +175,8 @@ namespace PuppetMaster
         {
             Console.WriteLine("Crashing Server: " + serverId);
             DataStoreServer.Program server;
-            
-            if(!TryGetProgram(serverId, out server)) 
+
+            if (!TryGetProgram(serverId, out server))
             {
                 Console.WriteLine("Cannot find server");
                 return;
@@ -145,7 +184,7 @@ namespace PuppetMaster
 
             server.Crash();
             activators.Remove(serverId);
-            
+
         }
 
         private void getStatus()
@@ -180,7 +219,7 @@ namespace PuppetMaster
 
         private void SaveServerProgram(string serverId, string url)
         {
-            DataStoreServer.Program program = (DataStoreServer.Program) Activator.CreateInstance<DataStoreServer.Program>();
+            DataStoreServer.Program program = (DataStoreServer.Program)Activator.CreateInstance<DataStoreServer.Program>();
             if (program == null)
             {
                 Console.WriteLine("Process was not found");

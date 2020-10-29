@@ -3,16 +3,43 @@ using Grpc.Core;
 using Shared.Domain;
 using Shared.GrpcDataStore;
 using Shared.Util;
+using Shared.Domain;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace DataStoreServer
 {
-    class DataStoreServiceImpl : DataStoreService.DataStoreServiceBase
+    public class DataStoreServiceImpl : DataStoreService.DataStoreServiceBase
     {
-        private Data database;
-        public DataStoreServiceImpl(Data database)
-        {
-            this.database = database;
+        //private Data database;
+        private List<Partition> partitions = new List<Partition>();
+        private int server_id;
+        private int min_delay;
+        private int max_delay;
+        private ThreadPool trhpool;
+        private Dictionary<WriteRequest, WriteReply> writeResults = new Dictionary<WriteRequest, WriteReply>();
+
+        public DataStoreServiceImpl(int server_id, int min_delay, int max_delay) {
+            this.server_id = server_id;
+            this.min_delay = min_delay;
+            this.max_delay = max_delay;
+            trhpool = new ThreadPool(1, this);  //only one for this fase
         }
+
+        public Partition getPartition(int partition_id) {
+            foreach (Partition p in partitions) {
+                if (p.getName() == partition_id) {
+                    return p;
+                }
+            }
+            return null;
+        }
+
+        public int getID() {
+            return server_id;
+        }
+
+
 
         public override Task<ReadReply> Read(ReadRequest request, ServerCallContext context)
         {
@@ -21,33 +48,26 @@ namespace DataStoreServer
 
         public ReadReply ReadHandler(ReadRequest request)
         {
-            ReadReply result;
-            DataStoreKey key = Utilities.ConvertKeyDtoToDomain(request.ObjectKey);
-            bool value_exists = database.dataStore.ContainsKey(key);
-
-            if (value_exists)
+            Partition partition = getPartition(request.ObjectKey.PartitionId);
+            ReadReply reply = null;
+            try
             {
-                result = new ReadReply
+                DataStoreValueDto value = partition.getData(request.ObjectKey);
+                reply = new ReadReply
                 {
-                    Object = Utilities.ConvertValueDomainToDto(database.dataStore[key]),
+                    Object = value,
                     ObjectExists = true
                 };
             }
-            else
-            {
-                result = new ReadReply
+            catch (Exception e) {
+                reply = new ReadReply
                 {
-                    Object = new DataStoreValueDto
-                    {
-                        Val = ""
-                    },
                     ObjectExists = false
                 };
             }
 
-            return result;
+            return reply;
         }
-
         public override Task<WriteReply> Write(WriteRequest request, ServerCallContext context)
         {
             return Task.FromResult(WriteHandler(request));
@@ -55,17 +75,50 @@ namespace DataStoreServer
 
         public WriteReply WriteHandler(WriteRequest request)
         {
-            lock (database)
-            {
-                DataStoreKey key = Utilities.ConvertKeyDtoToDomain(request.ObjectKey);
-                DataStoreValue val = Utilities.ConvertValueDtoToDomain(request.Object);
-                database.dataStore.Add(key, val);
-            }
-            return new WriteReply
-            {
-                WriteStatus = 200
-            };
+            trhpool.submit(request);
+            WriteReply reply = getWriteResult(request);
+            return reply;
         }
 
+
+        public WriteReply getWriteResult(WriteRequest request) {
+            lock (writeResults) {
+                while (!writeResults.ContainsKey(request)) {
+                    Monitor.Wait(writeResults);
+                }
+                WriteReply reply = writeResults[request];
+                writeResults.Remove(request);
+                return reply;
+            }
+        }
+
+        public void setWriteResult(WriteRequest request, WriteReply reply) {
+            lock (writeResults) {
+                writeResults.Add(request, reply);
+                Monitor.PulseAll(writeResults);
+            }
+
+        }
+
+
+        public override Task<lockReply> LockObject(lockRequest request, ServerCallContext context)
+        {
+            lock (this) {
+                Partition p = getPartition(request.ObjectKey.PartitionId);
+                p.lockObject(request.ObjectKey, true);
+            }
+            return Task.FromResult(new lockReply());
+        }
+
+
+        public override Task<NewValueReplay> WriteNewValue(NewValueRequest request, ServerCallContext context) {
+            Partition partion = getPartition(request.Value.ObjectKey.PartitionId);
+            partion.addNewOrUpdateExisting(request.Value.ObjectKey, request.Value.Object);
+            partion.lockObject(request.Value.ObjectKey, false);
+            return Task.FromResult(new NewValueReplay
+            {
+                Ok = true
+            }) ;
+        }
     }
 }

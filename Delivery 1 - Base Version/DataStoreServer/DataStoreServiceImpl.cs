@@ -18,13 +18,12 @@ namespace DataStoreServer
         private int max_delay;
         private ThreadPool trhpool;
         private Dictionary<WriteRequest, WriteReply> writeResults = new Dictionary<WriteRequest, WriteReply>();
-        private bool isLocked = false;
 
         public DataStoreServiceImpl(int server_id, int min_delay, int max_delay) {
             this.server_id = server_id;
             this.min_delay = min_delay;
             this.max_delay = max_delay;
-            ThreadPool trhpool = new ThreadPool(1, this);  //only one for this fase
+            trhpool = new ThreadPool(1, this);  //only one for this fase
         }
 
         public Partition getPartition(int partition_id) {
@@ -47,49 +46,28 @@ namespace DataStoreServer
             return Task.FromResult(ReadHandler(request));
         }
 
-            public ReadReply ReadHandler(ReadRequest request)
+        public ReadReply ReadHandler(ReadRequest request)
+        {
+            Partition partition = getPartition(request.ObjectKey.PartitionId);
+            ReadReply reply = null;
+            try
             {
-            /*  ReadReply result;
-              DataStoreKey key = Utilities.ConvertKeyDtoToDomain(request.ObjectKey);
-              Partition suppost_partition = getPartition(key.partition_id);
-              if (suppost_partition != null)
-              {
-                  bool value_exists = suppost_partition.dataExists(key);
-
-                  if (value_exists)
-                  {
-                      result = new ReadReply
-                      {
-                          Object = Utilities.ConvertValueDomainToDto(suppost_partition.getData(key)),
-                          ObjectExists = true
-                      };
-                  }
-                  else
-                  {
-                      result = new ReadReply
-                      {
-                          Object = new DataStoreValueDto
-                          {
-                              Val = ""
-                          },
-                          ObjectExists = false
-                      };
-                  }
-              }
-              else {
-                  result = new ReadReply
-                  {
-                      Object = new DataStoreValueDto
-                      {
-                          Val = ""
-                      },
-                      ObjectExists = false
-                  };
-              }
-
-              return result;*/
-            return null;
+                DataStoreValueDto value = partition.getData(request.ObjectKey);
+                reply = new ReadReply
+                {
+                    Object = value,
+                    ObjectExists = true
+                };
             }
+            catch (Exception e) {
+                reply = new ReadReply
+                {
+                    ObjectExists = false
+                };
+            }
+             
+            return reply;
+        }
         public override Task<WriteReply> Write(WriteRequest request, ServerCallContext context)
         {
             return Task.FromResult(WriteHandler(request));
@@ -108,8 +86,10 @@ namespace DataStoreServer
                 while (!writeResults.ContainsKey(request)) {
                     Monitor.Wait(writeResults);
                 }
+                WriteReply reply = writeResults[request];
+                writeResults.Remove(request);
+                return reply;
             }
-            return writeResults[request];
         }
 
         public void setWriteResult(WriteRequest request, WriteReply reply) {
@@ -121,12 +101,11 @@ namespace DataStoreServer
         }
 
 
-        public override Task<lockReply> LockServer(lockRequest request, ServerCallContext context)
+        public override Task<lockReply> LockObject(lockRequest request, ServerCallContext context)
         {
             lock (this) {
-                while (this.isLocked) {
-                    Monitor.Wait(this);
-                }
+                Partition p = getPartition(request.ObjectKey.PartitionId);
+                p.lockObject(request.ObjectKey, true);
             }
             return Task.FromResult(new lockReply());
         }
@@ -134,9 +113,8 @@ namespace DataStoreServer
 
         public override Task<NewValueReplay> WriteNewValue(NewValueRequest request, ServerCallContext context) {
             Partition partion = getPartition(request.Value.ObjectKey.PartitionId);
-            partion.addData(request.Value.ObjectKey, request.Value.Object);
-            this.isLocked = false;
-            Monitor.PulseAll(this);
+            partion.addNewOrUpdateExisting(request.Value.ObjectKey, request.Value.Object);
+            partion.lockObject(request.Value.ObjectKey, false);
             return Task.FromResult(new NewValueReplay
             {
                 Ok = true

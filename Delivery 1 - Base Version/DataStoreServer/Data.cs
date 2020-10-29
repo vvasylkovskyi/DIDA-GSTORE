@@ -3,6 +3,7 @@ using Shared.GrpcDataStore;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Xml;
 
 namespace DataStoreServer
@@ -10,19 +11,69 @@ namespace DataStoreServer
     class Data
     {
         private Dictionary<DataStoreKeyDto, DataStoreValueDto> dataStore = new Dictionary<DataStoreKeyDto, DataStoreValueDto>();
-        
-        public DataStoreValueDto getObject(DataStoreKeyDto key) {
-            return dataStore[key];
+        private List<DataStoreKeyDto> readQueue = new List<DataStoreKeyDto>();
+
+        private DataStoreKeyDto getCorrectKey(DataStoreKeyDto key) {
+            foreach (DataStoreKeyDto objectkey in dataStore.Keys)
+            {
+                if (key.ObjectId == objectkey.ObjectId && key.PartitionId == objectkey.PartitionId)
+                {
+                    return objectkey;
+                }
+            }
+            return null;
+        }
+        public DataStoreValueDto getObject(DataStoreKeyDto key)  {
+            DataStoreKeyDto keyCorrect = getCorrectKey(key);
+            if (keyCorrect != null)
+            {
+                lock (this) {
+                    readQueue.Add(key);
+                    while (keyCorrect.Islocked || !readQueue[0].Equals(key)) {
+                        Monitor.Wait(this);
+                    }
+                    DataStoreValueDto result = dataStore[keyCorrect];
+                    readQueue.RemoveAt(0);
+                    Monitor.PulseAll(this);
+                    return result;
+                }
+            }
+            else
+                throw new Exception("Object does not exist");
         }
 
-        public void setData(DataStoreKeyDto key, DataStoreValueDto value) {
-            dataStore.Add(key, value);
+        public void CreateNewOrUpdateExisting(DataStoreKeyDto key, DataStoreValueDto value) {
+            key = getCorrectKey(key);
+            if (key != null)
+                dataStore[key] = value;
+            else {
+                DataStoreKeyDto newKey = new DataStoreKeyDto
+                {
+                    PartitionId = key.PartitionId,
+                    ObjectId = key.ObjectId,
+                    Islocked = true
+                };
+                dataStore.Add(newKey, value);
+            }
+                
         }
 
         public bool objectExists(DataStoreKeyDto key ) {
-            return dataStore.ContainsKey(key);
+            key = getCorrectKey(key);
+            if(key != null)
+                return true;
+            return false;
         }
 
+
+        public void setLockObject(DataStoreKeyDto key, bool objectLock) {
+            foreach (DataStoreKeyDto objectkey in dataStore.Keys) {
+                if (key.ObjectId == objectkey.ObjectId && key.PartitionId == objectkey.PartitionId) {
+                    objectkey.Islocked = objectLock;
+                    return;
+                }
+            }
+        }
     }
 
     public class Partition{
@@ -45,10 +96,10 @@ namespace DataStoreServer
             return replicas;
         }
 
-        public void addData(DataStoreKeyDto key, DataStoreValueDto value) {
+        public void addNewOrUpdateExisting(DataStoreKeyDto key, DataStoreValueDto value) {
             lock (this)
             {
-                data.setData(key, value);
+                data.CreateNewOrUpdateExisting(key, value);
             }
         }
 
@@ -64,6 +115,13 @@ namespace DataStoreServer
 
         public int getMasterID() {
             return master;
+        }
+
+        public void lockObject(DataStoreKeyDto key, bool locked) {
+            lock (this)
+            {
+                data.setLockObject(key, locked);
+            }
         }
 
        /* public override string ToString()

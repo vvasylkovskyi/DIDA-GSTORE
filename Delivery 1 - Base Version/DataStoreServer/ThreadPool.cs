@@ -97,15 +97,17 @@ namespace DataStoreServer
 
             //}
             //send request to write
-            lockReplicas(replicas);
+            lockReplicas(replicas, request.ObjectKey);
             WriteReply reply = write_new_value(replicas, partition.getMasterID(), request);
             return reply;
         }
 
-        public void lockReplicas(Dictionary<int, DataStoreService.DataStoreServiceClient> replicas) {     
+        public void lockReplicas(Dictionary<int, DataStoreService.DataStoreServiceClient> replicas, DataStoreKeyDto key) {     
             foreach (int replica_id in replicas.Keys){
                     try{
-                            replicas[replica_id].LockServer(new lockRequest { });
+                            replicas[replica_id].LockObject(new lockRequest {
+                                ObjectKey = key
+                            });
                     }
                     catch (Exception e){
                         Console.WriteLine(e.Message);

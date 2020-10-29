@@ -17,4 +17,8 @@
 	<Protobuf Include="..\Shared\protos\DataStoreServices.proto" GrpcServices="None" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DataStoreServer\DataStoreServer.csproj" />
+  </ItemGroup>
+
 </Project>

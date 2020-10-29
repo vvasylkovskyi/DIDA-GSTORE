@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading;
-using Grpc.Core;
-using Grpc.Net.Client;
-using Shared.Domain;
+﻿using Grpc.Net.Client;
 using Shared.GrpcDataStore;
 using Shared.Util;
+using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace DataStoreClient
 {

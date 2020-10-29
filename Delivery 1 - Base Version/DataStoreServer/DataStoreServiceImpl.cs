@@ -1,10 +1,8 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Grpc.Core;
+using Shared.Domain;
 using Shared.GrpcDataStore;
 using Shared.Util;
-using Shared.Domain;
-
 
 namespace DataStoreServer
 {

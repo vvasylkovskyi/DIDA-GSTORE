@@ -1,7 +1,6 @@
 ﻿using Grpc.Core;
 using Shared.GrpcDataStore;
 using System;
-using System.Collections.Generic;
 
 namespace DataStoreServer
 {

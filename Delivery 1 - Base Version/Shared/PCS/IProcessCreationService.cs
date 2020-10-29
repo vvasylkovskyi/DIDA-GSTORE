@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Shared.PCS
 {
-    interface IProcessCreationService
+    public interface IProcessCreationService
     {
         void StartServer(string args);
         void StartClient(string args);

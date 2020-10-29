@@ -16,20 +16,49 @@ namespace Shared.Util
         // ----- PARTITIONS -----
 
         // This dictionary stores the mapping between partitions and nodes.
-        public static Dictionary<int, string[]> partitionMapping = new Dictionary<int, string[]>()
+        public static Dictionary<int, string[]> partitionMappingById = new Dictionary<int, string[]>()
         {
             { 1, new string[] {"server1", "server2"} }
         };
 
+        public static Dictionary<string, string[]> partitionMappingByName = new Dictionary<string, string[]>();
+
+        public static int replicasNumber;
+
+
+        public static void UpdateReplicasNumber(int r)
+        {
+            replicasNumber = r;
+            Console.WriteLine(">>> Replication Factor updated successfully");
+        }
+
+        private static bool TryGetPartition(string partitionName, out string[] serverIds)
+        {
+            return partitionMappingByName.TryGetValue(partitionName, out serverIds);
+        }
+
+        public static void AddPartition(string partitionName, string[] serverIds)
+        {
+            string[] existingServerIds;
+            if (TryGetPartition(partitionName, out existingServerIds))
+            {
+                partitionMappingByName.Remove(partitionName);
+                Console.WriteLine(">>> Removing old partition...");
+            }
+            partitionMappingByName.Add(partitionName, serverIds);
+            Console.WriteLine(">>> New partition created with success");
+
+        }
+
         public static string getPartitionMaster(int partition_id)
         {
             // the first element in the node array is considered the partition master
-            return partitionMapping[partition_id][0];
+            return partitionMappingById[partition_id][0];
         }
 
         public static string[] getPartitionNodes(int partition_id)
         {
-            return partitionMapping[partition_id];
+            return partitionMappingById[partition_id];
         }
 
         // ----- SERVER URLs -----

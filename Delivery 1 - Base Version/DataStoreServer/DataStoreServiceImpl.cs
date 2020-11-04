@@ -1,11 +1,12 @@
 ﻿using System.Threading.Tasks;
 using Grpc.Core;
-using Shared.Domain;
 using Shared.GrpcDataStore;
-using Shared.Util;
-using Shared.Domain;
 using System.Collections.Generic;
 using System.Threading;
+using System;
+using System.Collections;
+using DataStoreServer.Domain;
+using DataStoreServer.Util;
 
 namespace DataStoreServer
 {
@@ -26,7 +27,7 @@ namespace DataStoreServer
             trhpool = new ThreadPool(1, this);  //only one for this fase
         }
 
-        public Partition getPartition(int partition_id) {
+        public Partition getPartition(string partition_id) {
             foreach (Partition p in partitions) {
                 if (p.getName() == partition_id) {
                     return p;
@@ -52,14 +53,14 @@ namespace DataStoreServer
             ReadReply reply = null;
             try
             {
-                DataStoreValueDto value = partition.getData(request.ObjectKey);
+                DataStoreValue value = partition.getData(Utilities.ConvertKeyDtoToDomain(request.ObjectKey));
                 reply = new ReadReply
                 {
                     Object = value,
                     ObjectExists = true
                 };
             }
-            catch (Exception e) {
+            catch (Exception) {
                 reply = new ReadReply
                 {
                     ObjectExists = false
@@ -119,6 +120,26 @@ namespace DataStoreServer
             {
                 Ok = true
             }) ;
+        }
+
+        public override async Task<ListServerReply> ListServer(ListServerRequest request, ServerCallContext context)
+        {
+            return await Task.FromResult(ListServerHandler(request));
+        }
+
+        // TODO needs implementation
+        public ListServerReply ListServerHandler(ListServerRequest request)
+        {
+            ListServerReply reply = null;
+
+            List<DataStorePartition> partitionList = new List<DataStorePartition>();
+
+            reply = new ListServerReply
+            {
+                PartitionList = { partitionList }
+            };
+
+            return reply;
         }
     }
 }

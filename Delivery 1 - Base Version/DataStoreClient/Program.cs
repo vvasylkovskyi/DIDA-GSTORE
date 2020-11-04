@@ -1,9 +1,10 @@
 ﻿using Grpc.Net.Client;
 using Shared.GrpcDataStore;
-using Shared.Util;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Shared.Util;
+using System.Threading;
 
 namespace DataStoreClient
 {
@@ -12,7 +13,6 @@ namespace DataStoreClient
         private GrpcChannel channel;
         private DataStoreService.DataStoreServiceClient client;
         private string attached_server_id;
-
 
 
         static void Main(string[] args)
@@ -42,7 +42,7 @@ namespace DataStoreClient
             switch (mainCommand)
             {
                 case "read":
-                    read(int.Parse(commandsList[1]), long.Parse(commandsList[2]), commandsList[3]);
+                    read(commandsList[1] , commandsList[2], commandsList[3]);
                     break;
                 case "write":
                     // use regex to find string inbetween quotes
@@ -54,10 +54,10 @@ namespace DataStoreClient
                     // save the first string inbetween quotation marks
                     string objectValue = matchResult.Groups[1].Value;
 
-                    write(int.Parse(commandsList[1]), long.Parse(commandsList[2]), objectValue);
+                    write(commandsList[1], commandsList[2], objectValue);
                     break;
                 case "listServer":
-
+                    listServer(commandsList[1]);
                     break;
                 case "listGlobal":
 
@@ -86,7 +86,7 @@ namespace DataStoreClient
 
 
 
-        private void read(int partition_id, long object_id, string server_id)
+        private void read(string partition_id, string object_id, string server_id)
         {
             string result = "N/A";
             bool got_result = false;
@@ -127,11 +127,11 @@ namespace DataStoreClient
             Console.WriteLine(result);
         }
 
-        private void write(int partition_id, long object_id, string value)
+        private void write(string partition_id, string object_id, string value)
         {
             WriteReply reply;
 
-            string partition_master_server_id = ServerMapping.getPartitionMaster(partition_id);
+            string partition_master_server_id = PartitionMapping.getPartitionMaster(partition_id);
             reattachServer(partition_master_server_id);
 
             var object_key = new DataStoreKeyDto
@@ -150,17 +150,40 @@ namespace DataStoreClient
 
         private void listServer(string server_id)
         {
+            ListServerReply reply;
 
+            string previous_attached_server = attached_server_id;
+            reattachServer(server_id);
+
+            reply = client.ListServer(new ListServerRequest { Msg = "" });
+
+            Console.WriteLine("Displaying objects stored in server: " + server_id);
+
+            foreach (DataStorePartitionDto partition in reply.PartitionList)
+            {
+                Console.WriteLine("Partition " + partition.PartitionId);
+                Console.WriteLine("The server is the master of this partition: " + (partition.PartitionMasterServerId.Equals(server_id)));
+
+                foreach (DataStoreObjectDto store_object in partition.ObjectList)
+                {
+                    Console.WriteLine(store_object);
+                }
+            }
+
+            reattachServer(previous_attached_server);
         }
 
         private void listGlobal()
         {
-
+            foreach(string server_id in ServerUrlMapping.serverUrlMapping.Keys)
+            {
+                listServer(server_id);
+            }
         }
 
         private void wait(int duration)
         {
-
+            Thread.Sleep(duration);
         }
 
         private void showHelp()
@@ -208,7 +231,7 @@ namespace DataStoreClient
 
         private void attachServer(string server_id)
         {
-            string url = ServerMapping.getServerUrl(server_id);
+            string url = ServerUrlMapping.getServerUrl(server_id);
             channel = GrpcChannel.ForAddress("http://localhost:9080");
             client = new DataStoreService.DataStoreServiceClient(channel);
             attached_server_id = server_id;
@@ -219,7 +242,6 @@ namespace DataStoreClient
             deattachServer();
             attachServer(server_id);
         }
-
 
 
         private void startProgram()

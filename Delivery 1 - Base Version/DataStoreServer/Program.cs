@@ -39,7 +39,7 @@ namespace DataStoreServer
         {
             Console.WriteLine("Printing status...");
             Console.WriteLine("I am server");
-            Console.WriteLine("My id: " + serverId);   
+            Console.WriteLine("My id: " + serverId);
         }
 
         public void Crash() 

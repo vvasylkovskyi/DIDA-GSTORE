@@ -9,6 +9,8 @@ namespace DataStoreServer
     {
         private bool _isFrozen = false;
         private string serverId = "";
+
+        private static ServerImp server;
         public Program() {}
 
         static void Main(string[] args)
@@ -25,15 +27,13 @@ namespace DataStoreServer
             String host_name = url.Split(":")[0];
             int port = int.Parse(url.Split(":")[1]);
 
-            Server server = new Server
-            {
-                Services = { DataStoreService.BindService(new DataStoreServiceImpl(server_id, min_delay, max_delay)) },
-                Ports = { new ServerPort(host_name, port, ServerCredentials.Insecure) }
-            };
-            server.Start();
+            server = new ServerImp(server_id, url, min_delay, max_delay);
+            server.init_servers() ;
+
+
             Console.WriteLine("I'm ready to work");
             Console.ReadKey();
-            server.ShutdownAsync().Wait();
+            //server.ShutdownAsync().Wait();
         }
 
         public void getStatus() 

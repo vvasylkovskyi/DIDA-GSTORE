@@ -15,10 +15,13 @@ namespace Shared.Domain
         public int partition_id { get; }
         public long object_id { get; }
 
+        public bool isLocked { get; set; }
+
         public DataStoreKey(int partition_id, long object_id)
         {
             this.partition_id = partition_id;
             this.object_id = object_id;
+            this.isLocked = false;
         }
 
         public override bool Equals(object obj)
@@ -42,6 +45,7 @@ namespace Shared.Domain
 
             return true;
         }
+
 
         public override int GetHashCode()
         {

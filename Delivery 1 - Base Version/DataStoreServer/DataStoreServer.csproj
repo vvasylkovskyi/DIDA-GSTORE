@@ -16,7 +16,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-	<Protobuf Include="..\Shared\protos\DataStoreServices.proto" GrpcServices="both" />
+	<Protobuf Include="..\Shared\protos\DataStoreServices.proto" GrpcServices="Server" />
+	<Protobuf Include="..\Shared\protos\ServerCommunicationService.proto" GrpcServices="both" />
   </ItemGroup>
 
 </Project>

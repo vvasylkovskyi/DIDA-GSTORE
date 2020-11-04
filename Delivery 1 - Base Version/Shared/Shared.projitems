@@ -9,8 +9,10 @@
     <Import_RootNamespace>Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Domain\Data.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Domain\DataStoreKey.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Domain\DataStoreValue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Domain\Partition.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Interfaces\IServerClientCommands.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PCS\IProcessCreationService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PCS\ProcessCreationService.cs" />
@@ -21,6 +23,7 @@
     <Folder Include="$(MSBuildThisFileDirectory)PCS\" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)protos\ServerCommunicationService.proto" />
     <None Include="$(MSBuildThisFileDirectory)protos\DataStoreServices.proto" />
   </ItemGroup>
 </Project>

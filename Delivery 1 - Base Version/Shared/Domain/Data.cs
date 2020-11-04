@@ -10,7 +10,7 @@ namespace Shared.Domain
     public class Data
     {
         private Dictionary<DataStoreKey, DataStoreValue> dataStore = new Dictionary<DataStoreKey, DataStoreValue>();
-        // private List<DataStoreKey> readQueue = new List<DataStoreKey>();
+         private List<DataStoreKey> readQueue = new List<DataStoreKey>();
 
          public DataStoreKey getCorrectKey(DataStoreKey key) {
              foreach (DataStoreKey objectkey in dataStore.Keys)
@@ -22,13 +22,13 @@ namespace Shared.Domain
              }
              return null;
          }
-        /*public DataStoreValue getObject(DataStoreKey key)  {
+        public DataStoreValue getObject(DataStoreKey key)  {
             DataStoreKey keyCorrect = getCorrectKey(key);
             if (keyCorrect != null)
             {
                 lock (this) {
                     readQueue.Add(key);
-                    while (keyCorrect.Islocked || !readQueue[0].Equals(key)) {
+                    while (keyCorrect.isLocked || !readQueue[0].Equals(key)) {
                         Monitor.Wait(this);
                     }
                     DataStoreValue result = dataStore[keyCorrect];
@@ -39,7 +39,7 @@ namespace Shared.Domain
             }
             else
                 throw new Exception("Object does not exist");
-        }*/
+        }
 
           public void CreateNewOrUpdateExisting(DataStoreKey key, DataStoreValue value) {
             if (objectExists(key))

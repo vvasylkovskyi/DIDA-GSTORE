@@ -105,5 +105,28 @@ namespace DataStoreServer
             WriteReply reply = getWriteResult(request);
             return reply;
         }
+
+        public ReadReply ReadHandler(ReadRequest request) { 
+                  Partition partition = getPartition(request.ObjectKey.PartitionId);
+                  ReadReply reply = null;
+                  try
+                  {
+                      DataStoreValue value = partition.getData(new DataStoreKey(request.ObjectKey.PartitionId, request.ObjectKey.ObjectId));
+                      reply = new ReadReply
+                      {
+                          Object = new DataStoreValueDto { Val = value.val},
+                          ObjectExists = true
+                      };
+                  }
+                  catch (Exception e) {
+                      reply = new ReadReply
+                      {
+                          Object = new DataStoreValueDto { Val = "NA" },
+                          ObjectExists = false
+                      };
+                  }
+
+                  return reply;
+        }
     }
 }

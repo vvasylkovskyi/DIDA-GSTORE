@@ -38,10 +38,10 @@ namespace Shared.Domain
           }
 
 
-          /*public DataStoreValue getData(DataStoreKey key)
+          public DataStoreValue getData(DataStoreKey key)
           {
               return data.getObject(key);
-          }*/
+          }
 
           public bool dataExists(DataStoreKey key)
           {

@@ -28,25 +28,7 @@ namespace DataStoreServer
 
         public ReadReply ReadHandler(ReadRequest request)
         {
-            /*      Partition partition = getPartition(request.ObjectKey.PartitionId);
-                  ReadReply reply = null;
-                  try
-                  {
-                  //    DataStoreValueDto value = partition.getData(request.ObjectKey);
-                      reply = new ReadReply
-                      {
-                          Object = value,
-                          ObjectExists = true
-                      };
-                  }
-                  catch (Exception e) {
-                      reply = new ReadReply
-                      {
-                          ObjectExists = false
-                      };
-                  }
-
-                  return reply;*/
+            
             return null;
         }
         public override Task<WriteReply> Write(WriteRequest request, ServerCallContext context)

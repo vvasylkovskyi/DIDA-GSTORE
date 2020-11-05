@@ -13,6 +13,10 @@ namespace DataStoreClient
         private GrpcChannel channel;
         private DataStoreService.DataStoreServiceClient client;
         private string attached_server_id;
+        
+        private List<string> commands_in_repeat_block;
+        private bool repeat_block_active = false;
+        private int repeat_block_total_cycles = 0;
 
 
         static void Main(string[] args)
@@ -42,41 +46,92 @@ namespace DataStoreClient
             switch (mainCommand)
             {
                 case "read":
-                    read(commandsList[1] , commandsList[2], commandsList[3]);
+
+                    if (repeat_block_active)
+                    {
+                        commands_in_repeat_block.Add(commands);
+                    }
+                    else
+                    {
+                        read(commandsList[1], commandsList[2], commandsList[3]);
+                    }
+
                     break;
+
                 case "write":
-                    // use regex to find string inbetween quotes
-                    Regex regexObj = new Regex("\"([^\"]*)\"");
 
-                    // match with the whole command
-                    Match matchResult = regexObj.Match(commands);
+                    if (repeat_block_active)
+                    {
+                        commands_in_repeat_block.Add(commands);
+                    }
+                    else
+                    {
+                        string objectValue = parseObjectValue(commands);
+                        write(commandsList[1], commandsList[2], objectValue);
+                    }
 
-                    // save the first string inbetween quotation marks
-                    string objectValue = matchResult.Groups[1].Value;
-
-                    write(commandsList[1], commandsList[2], objectValue);
                     break;
+
                 case "listServer":
-                    listServer(commandsList[1]);
+
+                    if (repeat_block_active)
+                    {
+                        commands_in_repeat_block.Add(commands);
+                    }
+                    else
+                    {
+                        listServer(commandsList[1]);
+                    }
+
                     break;
+
                 case "listGlobal":
 
+                    if (repeat_block_active)
+                    {
+                        commands_in_repeat_block.Add(commands);
+                    }
+                    else
+                    {
+                        listGlobal();
+                    }
+
                     break;
+
                 case "wait":
 
+                    if (repeat_block_active)
+                    {
+                        commands_in_repeat_block.Add(commands);
+                    }
+                    else
+                    {
+                        wait(int.Parse(commandsList[1]));
+                    }
+
                     break;
+
                 case "begin-repeat":
 
-                    break;
-                case "end-repeat":
+
+                    commands_in_repeat_block = new List<string>();
+                    repeat_block_active = true;
+                    repeat_block_total_cycles = int.Parse(commandsList[1]);
 
                     break;
+
+                case "end-repeat":
+                    executeRepeatBlock(commands_in_repeat_block);
+                    break;
+
                 case "help":
                     showHelp();
                     break;
+
                 case "exit":
                     exitProgram();
                     break;
+
                 default:
                     Console.WriteLine("This is an invalid command:" + mainCommand);
                     // showHelp();
@@ -221,7 +276,34 @@ namespace DataStoreClient
             }
         }
 
+        private string parseObjectValue(string commands)
+        {
+            // use regex to find string inbetween quotes
+            Regex regexObj = new Regex("\"([^\"]*)\"");
 
+            // match with the whole command
+            Match matchResult = regexObj.Match(commands);
+
+            // save the first string inbetween quotation marks
+            string objectValue = matchResult.Groups[1].Value;
+
+            return objectValue;
+        }
+
+
+        private void executeRepeatBlock(List<string> command_list)
+        {
+            for (int curr_cycle = 0; curr_cycle < repeat_block_total_cycles; curr_cycle++)
+            {
+                foreach (string command in commands_in_repeat_block)
+                {
+                    string replacedCommand = command.Replace("$i", curr_cycle.ToString());
+                    readCommandFromCommandLine(replacedCommand);
+                }
+            }
+
+            repeat_block_active = false;
+        }
 
         private void deattachServer()
         {

@@ -1,5 +1,5 @@
-﻿using Grpc.Core;
-using Shared.Domain;
+﻿using DataStoreServer.Domain;
+using Grpc.Core;
 using Shared.GrpcDataStore;
 using System;
 using System.Collections.Generic;
@@ -55,11 +55,11 @@ namespace DataStoreServer
             server.Start();
         }
 
-        public Partition getPartition(int partition_id)
+        public Partition getPartition(string partition_id)
         {
             foreach (Partition p in partitions)
             {
-                if (p.getName() == partition_id)
+                if (p.getName().Equals(partition_id))
                 {
                     return p;
                 }
@@ -118,7 +118,7 @@ namespace DataStoreServer
                           ObjectExists = true
                       };
                   }
-                  catch (Exception e) {
+                  catch (Exception) {
                       reply = new ReadReply
                       {
                           Object = new DataStoreValueDto { Val = "NA" },

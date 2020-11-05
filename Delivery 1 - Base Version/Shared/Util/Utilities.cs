@@ -14,39 +14,5 @@ namespace Shared.Util
             }
             return strinbuilder.ToString();
         }
-
-        public static Domain.DataStoreKey ConvertKeyDtoToDomain(GrpcDataStore.DataStoreKeyDto dto_key)
-        {
-            Domain.DataStoreKey domain_key = new Domain.DataStoreKey(dto_key.PartitionId, dto_key.ObjectId);
-            return domain_key;
-        }
-
-        public static GrpcDataStore.DataStoreKeyDto ConvertKeyDomainToDto(Domain.DataStoreKey domain_key)
-        {
-            GrpcDataStore.DataStoreKeyDto dto_key = new GrpcDataStore.DataStoreKeyDto
-            {
-                PartitionId = domain_key.partition_id,
-                ObjectId = domain_key.object_id
-            };
-            return dto_key;
-        }
-
-        public static Domain.DataStoreValue ConvertValueDtoToDomain(GrpcDataStore.DataStoreValueDto dto_value)
-        {
-            Domain.DataStoreValue domain_value = new Domain.DataStoreValue
-            {
-                val = dto_value.Val
-            };
-            return domain_value;
-        }
-
-        public static GrpcDataStore.DataStoreValueDto ConvertValueDomainToDto(Domain.DataStoreValue domain_value)
-        {
-            GrpcDataStore.DataStoreValueDto dto_value = new GrpcDataStore.DataStoreValueDto
-            {
-                Val = domain_value.val
-            };
-            return dto_value;
-        }
     }
 }

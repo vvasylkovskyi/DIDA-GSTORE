@@ -9,14 +9,11 @@
     <Import_RootNamespace>Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)Domain\Data.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Domain\DataStoreKey.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Domain\DataStoreValue.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Domain\Partition.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Interfaces\IServerClientCommands.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PCS\IProcessCreationService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PCS\ProcessCreationService.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Util\ServerMapping.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Util\PartitionMapping.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Util\ServerUrlMapping.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Util\Utilities.cs" />
   </ItemGroup>
   <ItemGroup>

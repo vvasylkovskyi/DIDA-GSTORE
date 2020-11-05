@@ -6,7 +6,9 @@
     <StartupObject>PuppetMaster.Program</StartupObject>
   </PropertyGroup>
 
-  <Import Project="..\Shared\Shared.projitems" Label="Shared" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;0436</NoWarn>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.13.0" />
@@ -14,11 +16,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <ProjectReference Include="..\DataStoreClient\DataStoreClient.csproj" />
+    <ProjectReference Include="..\DataStoreServer\DataStoreServer.csproj" />
 	<Protobuf Include="..\Shared\protos\DataStoreServices.proto" GrpcServices="None" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\DataStoreServer\DataStoreServer.csproj" />
-  </ItemGroup>
+  <Import Project="..\Shared\Shared.projitems" Label="Shared" />
 
 </Project>

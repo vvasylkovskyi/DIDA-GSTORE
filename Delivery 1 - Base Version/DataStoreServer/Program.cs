@@ -1,7 +1,6 @@
 ﻿using Grpc.Core;
 using Shared.GrpcDataStore;
 using System;
-using System.Collections.Generic;
 
 namespace DataStoreServer
 {
@@ -40,7 +39,7 @@ namespace DataStoreServer
         {
             Console.WriteLine("Printing status...");
             Console.WriteLine("I am server");
-            Console.WriteLine("My id: " + serverId);   
+            Console.WriteLine("My id: " + serverId);
         }
 
         public void Crash() 

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Shared.Domain
+namespace DataStoreServer.Domain
 {
     public class DataStoreValue
     {

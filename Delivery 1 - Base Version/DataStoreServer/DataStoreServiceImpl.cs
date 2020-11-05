@@ -1,12 +1,10 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Grpc.Core;
 using Shared.GrpcDataStore;
-using Shared.Util;
-using Shared.Domain;
 using System.Collections.Generic;
 using System.Threading;
 using System.ComponentModel.DataAnnotations;
+using DataStoreServer.Domain;
 
 namespace DataStoreServer
 {
@@ -18,9 +16,6 @@ namespace DataStoreServer
             this.server = server;
         }
 
-
-
-
         public override Task<ReadReply> Read(ReadRequest request, ServerCallContext context)
         {
             return Task.FromResult(ReadHandler(request));
@@ -28,7 +23,7 @@ namespace DataStoreServer
 
         public ReadReply ReadHandler(ReadRequest request)
         {
-            
+
             return null;
         }
         public override Task<WriteReply> Write(WriteRequest request, ServerCallContext context)
@@ -36,14 +31,25 @@ namespace DataStoreServer
             return Task.FromResult(server.WriteHandler(request));
         }
 
-        
 
+        public override async Task<ListServerReply> ListServer(ListServerRequest request, ServerCallContext context)
+        {
+            return await Task.FromResult(ListServerHandler(request));
+        }
 
+        // TODO needs implementation
+        public ListServerReply ListServerHandler(ListServerRequest request)
+        {
+            ListServerReply reply = null;
 
+            List<Partition> partitionList = new List<Partition>();
 
+            reply = new ListServerReply
+            {
+                //PartitionList = { partitionList }
+            };
 
-
-
-
+            return reply;
+        }
     }
 }

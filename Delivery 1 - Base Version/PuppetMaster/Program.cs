@@ -1,10 +1,8 @@
-﻿using System;
+﻿using Shared.PCS;
+using Shared.Util;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Shared.Interfaces;
-using Shared.PCS;
-using Shared.Util;
-using DataStoreServer;
 
 namespace PuppetMaster
 {
@@ -103,7 +101,7 @@ namespace PuppetMaster
                         Console.WriteLine(">>> Invalid number of servers, should have " + replicasNumber + " servers but " + serversNumber + " were given");
                         break;
                     }
-                    CreatePartition(replicasNumber, partitionName, serverIds.ToArray());
+                    CreatePartition(replicasNumber, partitionName, serverIds);
                     break;
                 case "Client":
                     string username = commandsList[1];
@@ -134,14 +132,14 @@ namespace PuppetMaster
 
         private void UpdateReplicasNumber(int replicasNumber)
         {
-            ServerMapping.UpdateReplicasNumber(replicasNumber);
+            PartitionMapping.UpdateReplicasNumber(replicasNumber);
         }
 
-        private void CreatePartition(int replicasNumber, string partitionName, string[] serverIds)
+        private void CreatePartition(int replicasNumber, string partitionName, List<string> serverIds)
         {
             Console.WriteLine(">>> Creating a Partition " + partitionName);
-            ServerMapping.UpdateReplicasNumber(replicasNumber);
-            ServerMapping.AddPartition(partitionName, serverIds);
+            PartitionMapping.UpdateReplicasNumber(replicasNumber);
+            PartitionMapping.AddPartition(partitionName, serverIds);
         }
 
         private void UnfreezServer(string serverId)

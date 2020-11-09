@@ -19,12 +19,12 @@ namespace DataStoreServer
         public void doWork() {
             Partition partition = server.getPartition(request.ObjectKey.PartitionId.ToString());
             Dictionary<int, ServerCommunicationService.ServerCommunicationServiceClient> PartitionReplicas = partition.getReplicas();
-            lockReplicas(PartitionReplicas, this.request.ObjectKey);
+            lockReplicas(PartitionReplicas, new DataStoreKey(request.ObjectKey.PartitionId, request.ObjectKey.ObjectId));
             WriteReply reply = write_new_value(PartitionReplicas, request);
             server.setWriteResult(request,reply);
         }
 
-        public void lockReplicas(Dictionary<int, ServerCommunicationService.ServerCommunicationServiceClient> replicas, DataStoreKeyDto key)
+        public void lockReplicas(Dictionary<int, ServerCommunicationService.ServerCommunicationServiceClient> replicas, DataStoreKey key)
         {
             foreach (int replica_id in replicas.Keys)
             {
@@ -32,8 +32,8 @@ namespace DataStoreServer
                 {
                     replicas[replica_id].LockObject(new lockRequest
                     {
-                       PartitionId = key.PartitionId,
-                       ObjectId = key.ObjectId
+                       PartitionId = key.partition_id,
+                       ObjectId = key.object_id
                     });
                 }
                 catch (Exception e)

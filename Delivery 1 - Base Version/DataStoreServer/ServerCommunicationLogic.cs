@@ -21,8 +21,8 @@ namespace DataStoreServer
         {
             lock (this)
             {
-                this.current_key = new DataStoreKey(request.PartitionId, request.ObjectId);
-                Partition p = server.getPartition(request.PartitionId);
+                this.current_key = new DataStoreKey(request.PartitionId.ToString(), request.ObjectId);
+                Partition p = server.getPartition(request.PartitionId.ToString());
                 p.lockObject(current_key, true);
             }
             return Task.FromResult(new lockReply());

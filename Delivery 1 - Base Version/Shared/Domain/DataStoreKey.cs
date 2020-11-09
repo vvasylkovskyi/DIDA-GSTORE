@@ -12,12 +12,12 @@ namespace Shared.Domain
         // the hash needs to be the same over the lifetime of the object, and the
         // simplest way to do that is to make the attributes read-only
 
-        public int partition_id { get; }
+        public String partition_id { get; }
         public long object_id { get; }
 
         public bool isLocked { get; set; }
 
-        public DataStoreKey(int partition_id, long object_id)
+        public DataStoreKey(String partition_id, long object_id)
         {
             this.partition_id = partition_id;
             this.object_id = object_id;

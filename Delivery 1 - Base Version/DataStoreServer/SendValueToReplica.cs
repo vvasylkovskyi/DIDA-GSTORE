@@ -17,7 +17,7 @@ namespace DataStoreServer
         }
 
         public void doWork() {
-            Partition partition = server.getPartition(request.ObjectKey.PartitionId);
+            Partition partition = server.getPartition(request.ObjectKey.PartitionId.ToString());
             Dictionary<int, ServerCommunicationService.ServerCommunicationServiceClient> PartitionReplicas = partition.getReplicas();
             lockReplicas(PartitionReplicas, this.request.ObjectKey);
             WriteReply reply = write_new_value(PartitionReplicas, request);

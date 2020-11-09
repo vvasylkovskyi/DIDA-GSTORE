@@ -11,14 +11,14 @@ namespace DataStoreServer
     public class ServerImp
     {
         private List<Partition> partitions = new List<Partition>();
-        private int server_id;
+        private String server_id;
         private int min_delay;
         private int max_delay;
         private ThrPool tpool = new ThrPool(1, 10);
         private Dictionary<WriteRequest, WriteReply> writeResults = new Dictionary<WriteRequest, WriteReply>();
         private String url;
 
-        public ServerImp(int server_id, String url, int min_delay, int max_delay)
+        public ServerImp(String server_id, String url, int min_delay, int max_delay)
         {
             this.server_id = server_id;
             this.min_delay = min_delay;
@@ -31,31 +31,15 @@ namespace DataStoreServer
         {
             String host_name = url.Split(":")[0];
             int port = int.Parse(url.Split(":")[1]);
-            init_datastoreservice(host_name, port);
-            init_servercommunicationservice(host_name, port);
-        }
-
-        private void init_servercommunicationservice(String host_name, int port)
-        {
-            
             Server server = new Server
             {
-                Services = { ServerCommunicationService.BindService(new ServerCommunicationLogic(this)) },
-                Ports = { new ServerPort(host_name, 98669, ServerCredentials.Insecure) }
-            };
-            server.Start();
-        }
-
-        private void init_datastoreservice(String host_name, int port) {
-            Server server = new Server
-            {
-                Services = { DataStoreService.BindService(new DataStoreServiceImpl(this)) },
+                Services = { ServerCommunicationService.BindService(new ServerCommunicationLogic(this)), DataStoreService.BindService(new DataStoreServiceImpl(this)) },
                 Ports = { new ServerPort(host_name, port, ServerCredentials.Insecure) }
             };
             server.Start();
         }
 
-        public Partition getPartition(int partition_id)
+        public Partition getPartition(String partition_id)
         {
             foreach (Partition p in partitions)
             {
@@ -67,7 +51,7 @@ namespace DataStoreServer
             return null;
         }
 
-        public int getID()
+        public String getID()
         {
             return server_id;
         }
@@ -107,11 +91,11 @@ namespace DataStoreServer
         }
 
         public ReadReply ReadHandler(ReadRequest request) { 
-                  Partition partition = getPartition(request.ObjectKey.PartitionId);
+                  Partition partition = getPartition(request.ObjectKey.PartitionId.ToString());
                   ReadReply reply = null;
                   try
                   {
-                      DataStoreValue value = partition.getData(new DataStoreKey(request.ObjectKey.PartitionId, request.ObjectKey.ObjectId));
+                      DataStoreValue value = partition.getData(new DataStoreKey(request.ObjectKey.PartitionId.ToString(), request.ObjectKey.ObjectId));
                       reply = new ReadReply
                       {
                           Object = new DataStoreValueDto { Val = value.val},

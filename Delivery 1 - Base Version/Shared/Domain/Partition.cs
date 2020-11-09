@@ -7,19 +7,19 @@ namespace Shared.Domain
 {
     public class Partition
     {
-        private int id;
+        private String id;
         private Dictionary<int, ServerCommunicationService.ServerCommunicationServiceClient> replicas;
         private int master;
         private Data data = new Data();
 
-        public Partition(int id, Dictionary<int, ServerCommunicationService.ServerCommunicationServiceClient> replicas, int master_id)
+        public Partition(String id, Dictionary<int, ServerCommunicationService.ServerCommunicationServiceClient> replicas, int master_id)
         {
             this.id = id;
             this.replicas = replicas;
             this.master = master_id;
         }
 
-        public int getName()
+        public String getName()
         {
             return id;
         }

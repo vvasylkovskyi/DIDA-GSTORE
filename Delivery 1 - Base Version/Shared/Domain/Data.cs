@@ -22,7 +22,7 @@ namespace Shared.Domain
              }
              return null;
          }
-        public DataStoreValue getObject(DataStoreKey key)  {
+        public Shared.Domain.DataStoreValue getObject(DataStoreKey key)  {
             DataStoreKey keyCorrect = getCorrectKey(key);
             if (keyCorrect != null)
             {

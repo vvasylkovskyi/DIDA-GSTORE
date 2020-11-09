@@ -17,7 +17,7 @@ namespace Shared.Util
 
         public static Domain.DataStoreKey ConvertKeyDtoToDomain(GrpcDataStore.DataStoreKeyDto dto_key)
         {
-            Domain.DataStoreKey domain_key = new Domain.DataStoreKey(dto_key.PartitionId, dto_key.ObjectId);
+            Domain.DataStoreKey domain_key = new Domain.DataStoreKey(dto_key.PartitionId.ToString(), dto_key.ObjectId);
             return domain_key;
         }
 

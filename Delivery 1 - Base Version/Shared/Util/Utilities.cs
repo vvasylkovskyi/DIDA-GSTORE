@@ -1,18 +1,39 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace Shared.Util
 {
     public static class Utilities
     {
-        public static string BuildArgumentsString(params string[] args)
+        public static string BuildArgumentsString(string[] args)
         {
-            StringBuilder strinbuilder = new StringBuilder();
+            StringBuilder stringbuilder = new StringBuilder();
             foreach (string argument in args)
             {
-                strinbuilder.Append(argument);
-                strinbuilder.Append(' ');
+                stringbuilder.Append(argument);
+                stringbuilder.Append(' ');
             }
-            return strinbuilder.ToString();
+            return stringbuilder.ToString();
+        }
+
+        public static string[] BuildArgsArrayFromArgsString(string argsString)
+        {
+            string[] args = argsString.Split(' ');
+            return args;
+        }
+
+        public static string getHostNameFromUrl(string url)
+        {
+            Uri uri = new Uri(url);
+            string hostName = uri.DnsSafeHost;
+            return hostName;
+        }
+
+        public static string getPortFromUrl(string url)
+        {
+            Uri uri = new Uri(url);
+            string port = uri.Port.ToString();
+            return port;
         }
     }
 }

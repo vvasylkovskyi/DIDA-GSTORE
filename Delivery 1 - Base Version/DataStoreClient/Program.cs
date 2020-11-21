@@ -5,10 +5,11 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Shared.Util;
 using System.Threading;
+using Grpc.Core;
 
 namespace DataStoreClient
 {
-    class Program
+    public class Program
     {
         private GrpcChannel channel;
         private DataStoreService.DataStoreServiceClient client;
@@ -24,10 +25,20 @@ namespace DataStoreClient
             new Program().Init(args);
         }
 
-        void Init(string[] args)
+        public Program()
+        {
+        }
+
+        public Program StartClient(string[] args)
+        {
+            Program program = new Program();
+            program.startProgram();
+            return program;
+        }
+
+        public void Init(string[] args)
         {
             startProgram();
-
             Console.WriteLine(">>> Started client process");
             Console.WriteLine(">>> Please write a command (use 'help' to get a list of available commands)");
             while (true)
@@ -331,7 +342,16 @@ namespace DataStoreClient
         {
             // allow http traffic in grpc
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+            Console.WriteLine("I'm ready to work");
         }
+
+        public void GetStatus()
+        {
+            Console.WriteLine("Printing status...");
+            Console.WriteLine("I am client");
+            Console.WriteLine("My id: ");
+        }
+
         private void exitProgram()
         {
             deattachServer();

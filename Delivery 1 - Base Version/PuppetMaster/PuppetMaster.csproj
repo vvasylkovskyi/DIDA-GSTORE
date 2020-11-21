@@ -11,16 +11,31 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.13.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.32.0">
+    <PackageReference Include="Google.Protobuf" Version="3.14.0" />
+    <PackageReference Include="Grpc" Version="2.33.1" />
+    <PackageReference Include="Grpc.Core" Version="2.33.1" />
+    <PackageReference Include="Grpc.Tools" Version="2.33.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <ProjectReference Include="..\DataStoreClient\DataStoreClient.csproj" />
     <ProjectReference Include="..\DataStoreServer\DataStoreServer.csproj" />
-	<Protobuf Include="..\Shared\protos\DataStoreServices.proto" GrpcServices="None" />
+    <PackageReference Include="Grpc.Net.ClientFactory" Version="2.23.2" />
+    <ProjectReference Include="..\PCS\PCS.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Protobuf Remove="..\Shared\protos\DataStoreServices.proto" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="PuppetMasterServices.proto" />
+    <None Remove="PuppetMasterServices.proto" />
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="..\PCS\PCS.proto" GrpcServices="Client">
+      <Link>Protos\PCS.proto</Link>
+    </Protobuf>
+  </ItemGroup>
   <Import Project="..\Shared\Shared.projitems" Label="Shared" />
 
 </Project>

@@ -10,32 +10,57 @@ namespace DataStoreServer
         private string serverId = "";
 
         private static ServerImp server;
-        public Program() {}
 
         static void Main(string[] args)
+        {
+            new Program().Init(args);
+        }
+
+        public Program(string[] args)
+        {
+        } 
+
+        public Program()
+        {
+        }
+
+        public Program StartServer(string[] args)
+        {
+            Program program = new Program();
+            program.StartProgram(args);
+            return program;
+        }
+
+        public void StartProgram(string[] args)
         {
             if (args.Length < 4)
             {
                 Console.WriteLine("this program needs 4 arguments <server_id>, <URL>, <Min_delay>  and <Max_delay>");
                 return;
             }
-            int server_id = int.Parse(args[0]);
+            string server_id = args[0];
+            SetServerId(server_id);
+
             String url = args[1];
+
             int min_delay = int.Parse(args[2]);
             int max_delay = int.Parse(args[3]);
-            String host_name = url.Split(":")[0];
-            int port = int.Parse(url.Split(":")[1]);
 
             server = new ServerImp(server_id, url, min_delay, max_delay);
-            server.init_servers() ;
+            server.init_servers();
 
 
             Console.WriteLine("I'm ready to work");
+        }
+
+        public void Init(string[] args)
+        {
+            StartProgram(args);
             Console.ReadKey();
             //server.ShutdownAsync().Wait();
         }
 
-        public void getStatus() 
+        public void GetStatus() 
         {
             Console.WriteLine("Printing status...");
             Console.WriteLine("I am server");
@@ -48,21 +73,26 @@ namespace DataStoreServer
             Environment.Exit(1);
         }
 
-        public void Freez() 
+        public void Freeze() 
         {
             Console.WriteLine("I am going to freeze");
             _isFrozen = true;
         }
 
-        public void Unfreez()
+        public void Unfreeze()
         {
             Console.WriteLine("I am going to unfreeze");
             _isFrozen = false;
         }
 
-        public void setServerId(string serverId) 
+        public void SetServerId(string serverId) 
         {
             this.serverId = serverId;
+        }
+
+        public string GetServerId()
+        {
+            return serverId;
         }
     }
 }

@@ -1,31 +1,47 @@
-﻿using Shared.PCS;
+﻿using PCS;
 using Shared.Util;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PuppetMaster
 {
     class Program
     {
-        #region private fields
-        private Dictionary<string, IProcessCreationService> processCreationServiceDictionary = new Dictionary<string, IProcessCreationService>();
-        private Dictionary<string, DataStoreServer.Program> activators = new Dictionary<string, DataStoreServer.Program>();
-        #endregion
 
         #region Puppet Master
         static void Main(string[] args)
         {
-            new Program().Init(args);
+            new Program().Init();
         }
 
-        void Init(string[] args)
+        void Init()
         {
+            // allow http traffic in grpc
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+
             Console.WriteLine(">>> Started Running Puppet Master");
-            Console.WriteLine(">>> Please Write a command");
-            while (true)
+            string command = "";
+            while (command != "1" || command != "2" || command != "q")
             {
-                readCommandFromCommandLine(Console.ReadLine());
+                Console.WriteLine(">>> Press '1' to read file");
+                Console.WriteLine(">>> Press '2' to go to write command menu");
+                Console.WriteLine(">>> Press 'q' to exit");
+                command = Console.ReadLine();
+                if (command == "1")
+                {
+                    ReadScriptFile();
+                }
+                else if (command == "2")
+                {
+                    ReadCommandFromCommandLine();
+                }
+                else if(command == "q")
+                {
+                    Environment.Exit(1);
+                }
             }
         }
 
@@ -33,7 +49,39 @@ namespace PuppetMaster
 
         #region read commands
 
-        private void readCommandFromCommandLine(string commands)
+        private void ReadScriptFile()
+        {
+            string command;
+            Console.WriteLine(">>> Please Write file pathname: ");
+            StreamReader file;
+
+            string filePath = Console.ReadLine();
+            try
+            {
+                file = new StreamReader(filePath);
+            }
+            catch (DirectoryNotFoundException)
+            {
+                Console.WriteLine(">>> Exception. File Not Found. Please Try again");
+                return;
+            }
+            while ((command = file.ReadLine()) != null)
+            {
+                ProcessCommand(command);
+            }
+        }
+
+        private void ReadCommandFromCommandLine()
+        {
+            while (true)
+            {
+                Console.WriteLine(">>> Please Write a command");
+                string command = Console.ReadLine();
+                ProcessCommand(command);
+            }
+        }
+
+        private void ProcessCommand(string commands)
         {
             if (string.IsNullOrWhiteSpace(commands))
                 return;
@@ -42,21 +90,20 @@ namespace PuppetMaster
             string mainCommand = commandsList[0];
             switch (mainCommand)
             {
-                case "q":
-                    foreach (IProcessCreationService PCS in processCreationServiceDictionary.Values)
-                    {
-                        try
-                        {
-                            PCS.ShutdownAllProcesses();
-                        }
-                        catch
-                        {
-                            // pragram can be already closed
-                        }
-                    }
-                    Environment.Exit(1);
-                    Environment.Exit(1);
-                    break;
+                //case "q":
+                //    foreach (IProcessCreationService PCS in processCreationServiceDictionary.Values)
+                //    {
+                //        try
+                //        {
+                //            PCS.ShutdownAllProcesses();
+                //        }
+                //        catch
+                //        {
+                //            // pragram can be already closed
+                //        }
+                //    }
+                //    Environment.Exit(1);
+                //    break;
                 case "ReplicationFactor":
                     string r = commandsList[1];
                     int rNumber;
@@ -65,13 +112,6 @@ namespace PuppetMaster
                         Console.WriteLine(" >>> Invalid Argument. First Replicas Number should be a number");
                     }
                     Task.Run(() => UpdateReplicasNumber(rNumber));
-                    break;
-                case "Server":
-                    string serverId = commandsList[1];
-                    string url = commandsList[2];
-                    string minDelay = commandsList[3];
-                    string maxDelay = commandsList[4];
-                    Task.Run(() => StartServerProcess(serverId, url, minDelay, maxDelay));
                     break;
                 case "Partition":
                     string replicasNumberString = commandsList[1];
@@ -103,6 +143,13 @@ namespace PuppetMaster
                     }
                     CreatePartition(replicasNumber, partitionName, serverIds);
                     break;
+                case "Server":
+                    string serverId = commandsList[1];
+                    string url = commandsList[2];
+                    string minDelay = commandsList[3];
+                    string maxDelay = commandsList[4];
+                    Task.Run(() => StartServerProcess(serverId, url, minDelay, maxDelay));
+                    break;
                 case "Client":
                     string username = commandsList[1];
                     string clientUrl = commandsList[2];
@@ -110,7 +157,7 @@ namespace PuppetMaster
                     Task.Run(() => StartClientProcess(username, clientUrl, scriptFile));
                     break;
                 case "Status":
-                    Task.Run(() => getStatus());
+                    Task.Run(() => GlobalStatus());
                     break;
                 case "Crash":
                     string crashServerId = commandsList[1];
@@ -126,6 +173,8 @@ namespace PuppetMaster
                     break;
                 case "Wait":
                     string timeMs = commandsList[1];
+                    Console.WriteLine(">>> Waiting...");
+                    Thread.Sleep(int.Parse(timeMs));
                     break;
             }
         }
@@ -145,104 +194,94 @@ namespace PuppetMaster
         private void UnfreezServer(string serverId)
         {
             Console.WriteLine("Unfreezing Server: " + serverId);
-            DataStoreServer.Program server;
 
-            if (!TryGetProgram(serverId, out server))
+            if (!ConnectionUtils.TryGetPCS(serverId, out PCSServices.PCSServicesClient server))
             {
                 Console.WriteLine("Cannot find server");
                 return;
             }
 
-            server.Unfreez();
+            UnfreezeReply unfreezeReply = server.Unfreeze(new UnfreezeRequest { ServerId = serverId });
+            Console.WriteLine(unfreezeReply.Unfreeze);
         }
+
         private void FreezServer(string serverId)
         {
             Console.WriteLine("Freezing Server: " + serverId);
-            DataStoreServer.Program server;
 
-            if (!TryGetProgram(serverId, out server))
+            if (!ConnectionUtils.TryGetPCS(serverId, out PCSServices.PCSServicesClient server))
             {
                 Console.WriteLine("Cannot find server");
                 return;
             }
 
-            server.Freez();
+            FreezeReply freezeReply = server.Freeze(new FreezeRequest { ServerId = serverId });
+            Console.WriteLine(freezeReply.Freeze);
         }
 
         private void CrashServer(string serverId)
         {
             Console.WriteLine("Crashing Server: " + serverId);
-            DataStoreServer.Program server;
 
-            if (!TryGetProgram(serverId, out server))
+            if (!ConnectionUtils.TryGetPCS(serverId, out PCSServices.PCSServicesClient server))
             {
                 Console.WriteLine("Cannot find server");
                 return;
             }
 
-            server.Crash();
-            activators.Remove(serverId);
-
+            CrashReply crashReply = server.Crash(new CrashRequest { ServerId = serverId });
+            Console.WriteLine(crashReply.Crash);
         }
 
-        private void getStatus()
+        private void GlobalStatus()
         {
             Console.WriteLine(">>> Getting Processes Status");
-            Parallel.ForEach(activators.Values, connection =>
-            {
-                connection.getStatus();
+            Parallel.ForEach(ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values, gRPCpuppetMasterToPCSconnetion => {
+                StatusReply statusReply = gRPCpuppetMasterToPCSconnetion.GlobalStatus(new StatusRequest { Localhost = "1" });
+                Console.WriteLine(statusReply.Status);
             });
         }
 
         private void StartServerProcess(string serverId, string url, string minDelay, string maxDelay)
         {
-            string argsString = Utilities.BuildArgumentsString(serverId, minDelay, maxDelay);
+            string argsString = Utilities.BuildArgumentsString(new string[] { serverId, url, minDelay, maxDelay });
             Console.WriteLine(">>> PCS Starting on url: " + url);
             Console.WriteLine(">>> With Args: " + argsString);
-            CheckPCSConnection(url);
-            processCreationServiceDictionary[url].StartServer(argsString);
+            if(ConnectionUtils.IsUrlAvailable(url))
+            {
+                ConnectionUtils.EstablishPCSConnection(url, serverId);
 
-            SaveServerProgram(serverId, url);
+                if (!ConnectionUtils.TryGetPCS(serverId, out PCSServices.PCSServicesClient pcs))
+                {
+                    Console.WriteLine("Cannot not establish connection with PCS");
+                    return;
+                }
+                Console.WriteLine("Invoking Start Server...");
+                StartServerReply startServerReply = pcs.StartServer(new StartServerRequest { Args = argsString });
+                Console.WriteLine(startServerReply.StartServer);
+            }
         }
 
         private void StartClientProcess(string username, string clientUrl, string scriptFile)
         {
-            string argsString = Utilities.BuildArgumentsString(username, clientUrl, scriptFile);
+            string argsString = Utilities.BuildArgumentsString(new string[] { username, clientUrl, scriptFile });
             Console.WriteLine(">>> PCS Starting on url: " + clientUrl);
             Console.WriteLine(">>> With Args: " + argsString);
-            CheckPCSConnection(clientUrl);
-            processCreationServiceDictionary[clientUrl].StartClient(argsString);
-
-        }
-
-        private void SaveServerProgram(string serverId, string url)
-        {
-            DataStoreServer.Program program = (DataStoreServer.Program)Activator.CreateInstance<DataStoreServer.Program>();
-            if (program == null)
+            if(ConnectionUtils.IsUrlAvailable(clientUrl))
             {
-                Console.WriteLine("Process was not found");
-            }
-            else
-            {
-                program.setServerId(serverId);
-                activators.Add(url, program);
+                ConnectionUtils.EstablishPCSConnection(clientUrl, username);
+
+                if (!ConnectionUtils.TryGetPCS(username, out PCSServices.PCSServicesClient pcs))
+                {
+                    Console.WriteLine("Cannot not establish connection with PCS");
+                    return;
+                }
+                Console.WriteLine("Invoking Start Client...");
+                StartClientReply startClientReply = pcs.StartClient(new StartClientRequest{ Args = argsString });
+                Console.WriteLine(startClientReply.StartClient);
             }
         }
-
-        private bool TryGetProgram(string processId, out DataStoreServer.Program program)
-        {
-            return activators.TryGetValue(processId, out program);
-        }
-
-        private void CheckPCSConnection(string url)
-        {
-            if (!processCreationServiceDictionary.ContainsKey(url))
-            {
-                Console.WriteLine(">>> Starting new PCS with url: " + url);
-                processCreationServiceDictionary.Add(url, Activator.CreateInstance<ProcessCreationService>());
-            }
-        }
-
         #endregion
     }
 }
+ 

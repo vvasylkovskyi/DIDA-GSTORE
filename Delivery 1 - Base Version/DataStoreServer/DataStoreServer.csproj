@@ -18,6 +18,7 @@
     </PackageReference>
 	<Protobuf Include="..\Shared\protos\DataStoreServices.proto" GrpcServices="Server" />
 	<Protobuf Include="..\Shared\protos\ServerCommunicationService.proto" GrpcServices="both" />
+	<PackageReference Include="Grpc.AspNetCore.Server" Version="2.23.2" />
   </ItemGroup>
 
 </Project>

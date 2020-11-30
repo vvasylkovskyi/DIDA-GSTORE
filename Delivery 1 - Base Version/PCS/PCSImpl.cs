@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Grpc.Core;
 using Shared.Util;
 
@@ -8,10 +11,7 @@ namespace PCS
     {
         ProcessCreationService processCreationService;
 
-        public PCSImpl(ProcessCreationService processCreationService)
-        {
-            this.processCreationService = processCreationService;
-        }
+        public PCSImpl(ProcessCreationService processCreationService) => this.processCreationService = processCreationService;
 
         public async override Task<StartServerReply> StartServer(StartServerRequest request, ServerCallContext context)
         {
@@ -43,6 +43,15 @@ namespace PCS
             return await Task.FromResult(GlobalStatusHandler());
         }
 
+        public async override Task<UpdateReplicasNumberReply> UpdateReplicasNumber(UpdateReplicasNumberRequest request, ServerCallContext context)
+        {
+            return await Task.FromResult(UpdateReplicasNumberHandler(request));
+        }
+
+        public async override Task<CreatePartitionReply> CreatePartition(CreatePartitionRequest request, ServerCallContext context)
+        {
+            return await Task.FromResult(CreatePartitionHandler(request));
+        }
 
         // -------- Handlers ---------
 
@@ -82,6 +91,26 @@ namespace PCS
         {
             processCreationService.Crash();
             return new CrashReply { Crash = "1" };
+        }
+
+        public UpdateReplicasNumberReply UpdateReplicasNumberHandler(UpdateReplicasNumberRequest request)
+        {
+            processCreationService.UpdateReplicasNumber(request.ReplicationFactor);
+            return new UpdateReplicasNumberReply { UpdateReplicasNumber = PartitionMapping.replicationFactor };
+        }
+
+        public CreatePartitionReply CreatePartitionHandler(CreatePartitionRequest request)
+        {
+            string[] args = Utilities.BuildArgsArrayFromArgsString(request.Args);
+            string replicationFactor = args[0];
+            string partitionName = args[1];
+
+            string[] serverIds = args.Skip(2)
+                    .Take(args.Length)
+                    .ToArray();
+
+            processCreationService.CreatePartition(replicationFactor, partitionName, serverIds);
+            return new CreatePartitionReply { CreateParititon = "1" };
         }
     }
 }

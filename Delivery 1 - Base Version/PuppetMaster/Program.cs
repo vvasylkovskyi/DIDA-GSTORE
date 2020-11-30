@@ -1,14 +1,17 @@
-﻿using PCS;
+﻿using Grpc.Core;
+using PCS;
+using PuppetMaster.Protos;
 using Shared.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace PuppetMaster
 {
-    class Program
+    public class Program
     {
 
         #region Puppet Master
@@ -17,18 +20,50 @@ namespace PuppetMaster
             new Program().Init();
         }
 
+        public void InitPuppetMasterServer()
+        {
+            try
+            {
+                Server server = new Server
+                {
+                    Services = { PuppetMasterServices.BindService(new PuppetMasterServiceImpl()) },
+                    Ports = { new ServerPort("localhost", Utilities.puppetMasterPort, ServerCredentials.Insecure) }
+                };
+                server.Start();
+
+                Console.WriteLine(">>> Puppet Master Server started on port: " + Utilities.puppetMasterPort);
+            }
+            catch
+            {
+                Console.WriteLine(">>> Error. Something went wrong");
+            }
+        }
+
         void Init()
         {
             // allow http traffic in grpc
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
+            InitPuppetMasterServer();
+
             Console.WriteLine(">>> Started Running Puppet Master");
+
+            listenToCommands();
+        }
+
+        #endregion
+
+        #region read commands
+
+        private void listenToCommands()
+        {
             string command = "";
             while (command != "1" || command != "2" || command != "q")
             {
                 Console.WriteLine(">>> Press '1' to read file");
                 Console.WriteLine(">>> Press '2' to go to write command menu");
                 Console.WriteLine(">>> Press 'q' to exit");
+  
                 command = Console.ReadLine();
                 if (command == "1")
                 {
@@ -38,16 +73,14 @@ namespace PuppetMaster
                 {
                     ReadCommandFromCommandLine();
                 }
-                else if(command == "q")
+                else if (command == "q")
                 {
                     Environment.Exit(1);
                 }
+                
+
             }
         }
-
-        #endregion
-
-        #region read commands
 
         private void ReadScriptFile()
         {
@@ -90,41 +123,26 @@ namespace PuppetMaster
             string mainCommand = commandsList[0];
             switch (mainCommand)
             {
-                //case "q":
-                //    foreach (IProcessCreationService PCS in processCreationServiceDictionary.Values)
-                //    {
-                //        try
-                //        {
-                //            PCS.ShutdownAllProcesses();
-                //        }
-                //        catch
-                //        {
-                //            // pragram can be already closed
-                //        }
-                //    }
-                //    Environment.Exit(1);
-                //    break;
                 case "ReplicationFactor":
                     string r = commandsList[1];
-                    int rNumber;
-                    if (int.TryParse(r, out rNumber) == false)
+                    if (int.TryParse(r, out int replicationFactor) == false)
                     {
-                        Console.WriteLine(" >>> Invalid Argument. First Replicas Number should be a number");
+                        Console.WriteLine(" >>> Invalid Argument. Replicas Number should be a number");
                     }
-                    Task.Run(() => UpdateReplicasNumber(rNumber));
+                    Task.Run(() => UpdateReplicasNumber(r));
                     break;
                 case "Partition":
                     string replicasNumberString = commandsList[1];
                     string partitionName = commandsList[2];
-                    List<string> serverIds = new List<string>();
 
                     int serversNumber = 0;
-                    int replicasNumber = 0;
-                    if (int.TryParse(replicasNumberString, out replicasNumber) == false)
+                    if (int.TryParse(replicasNumberString, out int replicasNumber) == false)
                     {
                         Console.WriteLine(">>> Invalid Argument. First argument should be a number");
                         break;
                     }
+
+                    List<string> serverIds = new List<string>();
 
                     for (int i = 3; i < commandsList.Length; i++)
                     {
@@ -141,7 +159,8 @@ namespace PuppetMaster
                         Console.WriteLine(">>> Invalid number of servers, should have " + replicasNumber + " servers but " + serversNumber + " were given");
                         break;
                     }
-                    CreatePartition(replicasNumber, partitionName, serverIds);
+
+                    Task.Run(() => CreatePartition(replicasNumberString, partitionName, serverIds.ToArray()));
                     break;
                 case "Server":
                     string serverId = commandsList[1];
@@ -176,19 +195,42 @@ namespace PuppetMaster
                     Console.WriteLine(">>> Waiting...");
                     Thread.Sleep(int.Parse(timeMs));
                     break;
+                //case "q":
+                //    foreach (IProcessCreationService PCS in processCreationServiceDictionary.Values)
+                //    {
+                //        try
+                //        {
+                //            PCS.ShutdownAllProcesses();
+                //        }
+                //        catch
+                //        {
+                //            // pragram can be already closed
+                //        }
+                //    }
+                //    Environment.Exit(1);
+                //    break;
             }
         }
 
-        private void UpdateReplicasNumber(int replicasNumber)
+        private void UpdateReplicasNumber(string replicationFactor)
         {
-            PartitionMapping.UpdateReplicasNumber(replicasNumber);
+            Console.WriteLine(">>> Updating Replication Factor...");
+            Parallel.ForEach(ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values, gRPCpuppetMasterToPCSconnetion => {
+                UpdateReplicasNumberReply updateReplicasNumberReply = gRPCpuppetMasterToPCSconnetion.UpdateReplicasNumber(new UpdateReplicasNumberRequest { ReplicationFactor = replicationFactor });
+                Console.WriteLine(">>> Replication Factor response from PCS: " + updateReplicasNumberReply.UpdateReplicasNumber);
+            });    
         }
 
-        private void CreatePartition(int replicasNumber, string partitionName, List<string> serverIds)
+        private void CreatePartition(string replicationFactor, string partitionName, string[] serverIds)
         {
-            Console.WriteLine(">>> Creating a Partition " + partitionName);
-            PartitionMapping.UpdateReplicasNumber(replicasNumber);
-            PartitionMapping.AddPartition(partitionName, serverIds);
+            Console.WriteLine(">>> Creating a partition...");
+            string[] stringArray = new string[] { replicationFactor, partitionName };
+            string[] args = stringArray.Concat(serverIds).ToArray();
+            string argsString = Utilities.BuildArgumentsString(args);
+            Parallel.ForEach(ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values, gRPCpuppetMasterToPCSconnetion => {
+                CreatePartitionReply createPartitionReply = gRPCpuppetMasterToPCSconnetion.CreatePartition(new CreatePartitionRequest { Args = argsString });
+                Console.WriteLine(">>> Create Partition response from PCS: " + createPartitionReply.CreateParititon);
+            }); 
         }
 
         private void UnfreezServer(string serverId)
@@ -247,19 +289,16 @@ namespace PuppetMaster
             string argsString = Utilities.BuildArgumentsString(new string[] { serverId, url, minDelay, maxDelay });
             Console.WriteLine(">>> PCS Starting on url: " + url);
             Console.WriteLine(">>> With Args: " + argsString);
-            if(ConnectionUtils.IsUrlAvailable(url))
-            {
-                ConnectionUtils.EstablishPCSConnection(url, serverId);
 
-                if (!ConnectionUtils.TryGetPCS(serverId, out PCSServices.PCSServicesClient pcs))
-                {
-                    Console.WriteLine("Cannot not establish connection with PCS");
-                    return;
-                }
-                Console.WriteLine("Invoking Start Server...");
-                StartServerReply startServerReply = pcs.StartServer(new StartServerRequest { Args = argsString });
-                Console.WriteLine(startServerReply.StartServer);
+            if (!ConnectionUtils.TryGetPCS(serverId, out PCSServices.PCSServicesClient pcs))
+            {
+                Console.WriteLine("Cannot find connected PCS");
+                return;
             }
+
+            Console.WriteLine("Invoking Start Server...");
+            StartServerReply startServerReply = pcs.StartServer(new StartServerRequest { Args = argsString });
+            Console.WriteLine(startServerReply.StartServer);
         }
 
         private void StartClientProcess(string username, string clientUrl, string scriptFile)
@@ -267,20 +306,18 @@ namespace PuppetMaster
             string argsString = Utilities.BuildArgumentsString(new string[] { username, clientUrl, scriptFile });
             Console.WriteLine(">>> PCS Starting on url: " + clientUrl);
             Console.WriteLine(">>> With Args: " + argsString);
-            if(ConnectionUtils.IsUrlAvailable(clientUrl))
-            {
-                ConnectionUtils.EstablishPCSConnection(clientUrl, username);
 
-                if (!ConnectionUtils.TryGetPCS(username, out PCSServices.PCSServicesClient pcs))
-                {
-                    Console.WriteLine("Cannot not establish connection with PCS");
-                    return;
-                }
-                Console.WriteLine("Invoking Start Client...");
-                StartClientReply startClientReply = pcs.StartClient(new StartClientRequest{ Args = argsString });
-                Console.WriteLine(startClientReply.StartClient);
+            if (!ConnectionUtils.TryGetPCS(username, out PCSServices.PCSServicesClient pcs))
+            {
+                Console.WriteLine("Cannot not establish connection with PCS");
+                return;
             }
+
+            Console.WriteLine("Invoking Start Client...");
+            StartClientReply startClientReply = pcs.StartClient(new StartClientRequest { Args = argsString });
+            Console.WriteLine(startClientReply.StartClient);
         }
+
         #endregion
     }
 }

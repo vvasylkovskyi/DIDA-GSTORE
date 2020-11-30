@@ -5,6 +5,9 @@ namespace Shared.Util
 {
     public static class Utilities
     {
+
+        public static int puppetMasterPort = 9999;
+
         public static string BuildArgumentsString(string[] args)
         {
             StringBuilder stringbuilder = new StringBuilder();
@@ -34,6 +37,12 @@ namespace Shared.Util
             Uri uri = new Uri(url);
             string port = uri.Port.ToString();
             return port;
+        }
+
+        public static int RandomNumber(int min, int max)
+        {
+            Random random = new Random();
+            return random.Next(min, max);
         }
     }
 }

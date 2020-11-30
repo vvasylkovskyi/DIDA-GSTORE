@@ -22,6 +22,7 @@
     <ProjectReference Include="..\DataStoreServer\DataStoreServer.csproj" />
     <PackageReference Include="Grpc.Net.ClientFactory" Version="2.23.2" />
     <ProjectReference Include="..\PCS\PCS.csproj" />
+    <PackageReference Include="Grpc.AspNetCore.Server" Version="2.23.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,8 +31,12 @@
   <ItemGroup>
     <None Remove="PuppetMasterServices.proto" />
     <None Remove="PuppetMasterServices.proto" />
+    <None Remove="Protos\PuppetMaster.proto" />
   </ItemGroup>
   <ItemGroup>
+    <Protobuf Include="Protos\PuppetMaster.proto" GrpcServices="Server">
+      <Link>Protos\PuppetMaster.proto</Link>
+    </Protobuf>
     <Protobuf Include="..\PCS\PCS.proto" GrpcServices="Client">
       <Link>Protos\PCS.proto</Link>
     </Protobuf>

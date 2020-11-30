@@ -35,29 +35,14 @@ namespace DataStoreServer
             int port;
 
             int.TryParse(portString, out port);
-            init_datastoreservice(hostName, port);
-            init_servercommunicationservice(hostName, port);
-        }
-
-        private void init_servercommunicationservice(string host_name, int port)
-        {
-            
             Server server = new Server
             {
-                Services = { ServerCommunicationService.BindService(new ServerCommunicationLogic(this)) },
-                Ports = { new ServerPort(host_name, port, ServerCredentials.Insecure) }
+                Services = { ServerCommunicationService.BindService(new ServerCommunicationLogic(this)), DataStoreService.BindService(new DataStoreServiceImpl(this)) },
+                Ports = { new ServerPort(hostName, port, ServerCredentials.Insecure) }
             };
             server.Start();
         }
 
-        private void init_datastoreservice(string host_name, int port) {
-            Server server = new Server
-            {
-                Services = { DataStoreService.BindService(new DataStoreServiceImpl(this)) },
-                Ports = { new ServerPort(host_name, port, ServerCredentials.Insecure) }
-            };
-            server.Start();
-        }
 
         public Partition getPartition(string partition_id)
         {

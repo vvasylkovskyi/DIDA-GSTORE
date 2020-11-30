@@ -21,7 +21,6 @@
     <ProjectReference Include="..\DataStoreClient\DataStoreClient.csproj" />
     <ProjectReference Include="..\DataStoreServer\DataStoreServer.csproj" />
     <PackageReference Include="Grpc.Net.ClientFactory" Version="2.23.2" />
-    <ProjectReference Include="..\PCS\PCS.csproj" />
     <PackageReference Include="Grpc.AspNetCore.Server" Version="2.23.2" />
   </ItemGroup>
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -51,6 +50,11 @@ namespace PCS
         public async override Task<CreatePartitionReply> CreatePartition(CreatePartitionRequest request, ServerCallContext context)
         {
             return await Task.FromResult(CreatePartitionHandler(request));
+        }
+
+        public async override Task<UpdatePartitionsReply> UpdatePartitions(UpdatePartitionsRequest request, ServerCallContext context)
+        {
+            return await Task.FromResult(UpdatePartitionsHandler(request));
         }
 
         // -------- Handlers ---------
@@ -111,6 +115,13 @@ namespace PCS
 
             processCreationService.CreatePartition(replicationFactor, partitionName, serverIds);
             return new CreatePartitionReply { CreateParititon = "1" };
+        }
+
+        public UpdatePartitionsReply UpdatePartitionsHandler(UpdatePartitionsRequest request)
+        {
+            Console.WriteLine("Updating Partitions"); 
+            processCreationService.UpdatePartitions(request.CrashedServerId);
+            return new UpdatePartitionsReply { UpdatePartitions = "1" };
         }
     }
 }

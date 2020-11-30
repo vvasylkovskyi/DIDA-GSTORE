@@ -27,18 +27,16 @@ namespace DataStoreClient
 
         public Program()
         {
+            startProgram();
         }
 
         public Program StartClient(string[] args)
         {
-            Program program = new Program();
-            program.startProgram();
-            return program;
+            return new Program();
         }
 
         public void Init(string[] args)
         {
-            startProgram();
             Console.WriteLine(">>> Started client process");
             Console.WriteLine(">>> Please write a command (use 'help' to get a list of available commands)");
             while (true)
@@ -326,7 +324,7 @@ namespace DataStoreClient
         private void attachServer(string server_id)
         {
             string url = ServerUrlMapping.getServerUrl(server_id);
-            channel = GrpcChannel.ForAddress("http://localhost:9080");
+            channel = GrpcChannel.ForAddress(url);
             client = new DataStoreService.DataStoreServiceClient(channel);
             attached_server_id = server_id;
         }

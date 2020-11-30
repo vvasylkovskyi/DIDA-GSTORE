@@ -1,5 +1,8 @@
 using System;
 using Grpc.Core;
+using Grpc.Net.Client;
+using PuppetMaster.Protos;
+using Shared.Util;
 
 namespace PCS
 {
@@ -12,51 +15,65 @@ namespace PCS
 
         public static void Main(string[] args)
         {
-            new ProcessCreationService(args);
+            new ProcessCreationService();
         }
 
-        public ProcessCreationService(string[] args)
+        public ProcessCreationService()
         {
-            Console.WriteLine(">>> Started Running PCS");
-            Console.WriteLine(">>> Please Write arguments (<port>)");
-            if (args.Length == 0)
+            // allow http traffic in grpc
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+
+            int port = Utilities.RandomNumber(10000, 11000);
+            Console.WriteLine(">>> Starting PCS on port: " + port);
+
+            try {
+                InitPCSServer(port);
+                NotifyPuppetMaster(port.ToString());
+            } catch
             {
-                while(true)
-                {
-                    ReadArgsFromCommandLine();
-                }
-            } else
-            {
-                Init(args);
+                Console.WriteLine(">>> Error: Something went wrong");
             }
-             
-        }
 
-        private void ReadArgsFromCommandLine()
-        {
-            string port = Console.ReadLine();;
-
-            Console.WriteLine(">>> Starting PCS on port : " + port);
-            Init(new string[] { port });
-        }
-
-        public void Init(string[] args)
-        {
-            InitPCSServer(args);
-        }
-
-        public void InitPCSServer(string[] args)
-        {
-            string portString = args[0];
-            int.TryParse(portString, out int port);
-            Server server = new Server
+            while(true)
             {
-                Services = { PCSServices.BindService(new PCSImpl(this)) },
-                Ports = { new ServerPort("localhost", port, ServerCredentials.Insecure) }
-            };
-            server.Start();
+                
+            }
+        }
 
-            Console.WriteLine(">>> PCS Server started");
+        public void InitPCSServer(int port)
+        {
+
+                Server server = new Server
+                {
+                    Services = { PCSServices.BindService(new PCSImpl(this)) },
+                    Ports = { new ServerPort("localhost", port, ServerCredentials.Insecure) }
+                };
+                server.Start();
+
+                Console.WriteLine(">>> PCS Server started");
+            
+        }
+
+
+        public static void NotifyPuppetMaster(string port)
+        {
+            Console.WriteLine(">>> Initializing Grpc Connection to puppet master on port: " + Utilities.puppetMasterPort);
+            try
+            {
+                GrpcChannel channel = GrpcChannel.ForAddress("http://localhost:" + Utilities.puppetMasterPort);
+                PuppetMasterServices.PuppetMasterServicesClient client = new PuppetMasterServices.PuppetMasterServicesClient(channel);
+                Console.WriteLine("Invoking Notify Puppet Master...");
+                NotifyPuppetMasterReply notifyPuppetMasterReply = client.NotifyPuppetMaster(new NotifyPuppetMasterRequest { Port = port });
+                Console.WriteLine(notifyPuppetMasterReply.Port);
+            }
+            catch (UriFormatException)
+            {
+                Console.WriteLine(">>> Exception. URI format is incorrect");
+            }
+            catch
+            {
+                Console.WriteLine(">>> Error. Something went wrong");
+            }
         }
 
         public void StartServer(string[] args)
@@ -95,12 +112,21 @@ namespace PCS
             if (pcsRole == "server")
             {
                 server.GetStatus();
-                
             }
             else if (pcsRole == "client")
             {
                 client.GetStatus();
             }
+        }
+
+        public void UpdateReplicasNumber(string replicationFactor)
+        {
+            PartitionMapping.UpdateReplicasNumber(replicationFactor);
+        }
+
+        public void CreatePartition(string replicationFactor, string partitionName, string[] serverIds)
+        {
+            PartitionMapping.CreatePartition(replicationFactor, partitionName, serverIds);
         }
 
         //public void ShutdownAllProcesses()

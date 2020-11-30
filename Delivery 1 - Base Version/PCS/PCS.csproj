@@ -24,7 +24,13 @@
     <None Remove="PCS.proto" />
   </ItemGroup>
   <ItemGroup>
-    <Protobuf Include="PCS.proto" GrpcServices="ClientAndServer">
+    <Folder Include="Protos\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="..\PuppetMaster\Protos\PuppetMaster.proto" GrpcServices="Client">
+      <Link>Protos\PuppetMaster.proto</Link>
+    </Protobuf>
+    <Protobuf Include="PCS.proto" GrpcServices="Server">
       <Link>Protos\PCS.proto</Link>
     </Protobuf>
   </ItemGroup>

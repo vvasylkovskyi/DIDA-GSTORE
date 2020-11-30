@@ -11,6 +11,24 @@ service PCSServices {
   rpc Freeze (FreezeRequest) returns (FreezeReply);
   rpc Unfreeze (UnfreezeRequest) returns (UnfreezeReply);
   rpc Crash (CrashRequest) returns (CrashReply);
+  rpc UpdateReplicasNumber (UpdateReplicasNumberRequest) returns (UpdateReplicasNumberReply);
+  rpc CreatePartition (CreatePartitionRequest) returns (CreatePartitionReply);
+}
+
+message CreatePartitionRequest {
+    string args = 1;
+}
+
+message CreatePartitionReply {
+	string createParititon = 1;
+}
+
+message UpdateReplicasNumberRequest {
+	string replicationFactor = 1;
+}
+
+message UpdateReplicasNumberReply {
+	string updateReplicasNumber = 1;
 }
 
 message StartServerRequest {

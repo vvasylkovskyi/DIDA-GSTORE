@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Grpc.Net.Client;
 using PCS;
 
@@ -8,24 +9,80 @@ namespace PuppetMaster
     public static class ConnectionUtils
     {
         public static Dictionary<string, PCSServices.PCSServicesClient> gRPCpuppetMasterToPCSconnetionsDictionary = new Dictionary<string, PCSServices.PCSServicesClient>();
-        public static Dictionary<string, string> processCreationServiceUrlsDictionary = new Dictionary<string, string>();
-        public static int nextPCSPort = 10000;
+        public static Dictionary<string, string> pcsPortToServerOrClientIdDictionary = new Dictionary<string, string>();
 
-        public static bool TryGetPCS(string processId, out PCSServices.PCSServicesClient pcs)
+
+        public static string TryGetClientOrServer(string clientOrServerId)
         {
-            return gRPCpuppetMasterToPCSconnetionsDictionary.TryGetValue(processId, out pcs);
+            if (pcsPortToServerOrClientIdDictionary.TryGetValue(clientOrServerId, out string pcsPort))
+            {
+                return pcsPort;
+            }
+
+            return null;
+        }
+
+        public static bool TryGetPCS(string clientOrServerId, out PCSServices.PCSServicesClient pcs)
+        {
+            string pcsPort = TryGetClientOrServer(clientOrServerId);
+            if (pcsPort != null)
+            {
+                return gRPCpuppetMasterToPCSconnetionsDictionary.TryGetValue(pcsPort, out pcs);                
+            } else
+            {
+                return TryGetFirstFreePCS(clientOrServerId, out pcs);
+            }
+        }
+
+        public static bool TryGetFirstFreePCS(string clientOrServerId, out PCSServices.PCSServicesClient pcs)
+        {
+            string[] arrayOfPorts = gRPCpuppetMasterToPCSconnetionsDictionary.Keys.ToArray();
+
+            if(pcsPortToServerOrClientIdDictionary.Count != 0)
+            {
+                foreach(string port in arrayOfPorts) 
+                {
+                    bool portIsFree = true;
+                    foreach (string pcsPort in pcsPortToServerOrClientIdDictionary.Values)
+                    {
+                        // PCS on 'port' is busy
+                        if (port == pcsPort)
+                        {
+                            portIsFree = false;
+                            break;
+                        }
+                    }
+
+                    if(portIsFree) {
+                        AddNewPcsPortToServerOrClientUrlDictionary(port, clientOrServerId);
+                        return gRPCpuppetMasterToPCSconnetionsDictionary.TryGetValue(port, out pcs);
+                    }
+                }
+            } else {
+                // First Port
+                AddNewPcsPortToServerOrClientUrlDictionary(arrayOfPorts.First(), clientOrServerId);
+                return gRPCpuppetMasterToPCSconnetionsDictionary.TryGetValue(arrayOfPorts.First(), out pcs);
+            }
+            
+            pcs = null;
+            return false;
+        }
+
+        public static void AddNewPcsPortToServerOrClientUrlDictionary(string port, string clientOrServerId)
+        {
+            pcsPortToServerOrClientIdDictionary.Add(clientOrServerId, port);
         }
 
         // Example url : http://localhost:3000
-        public static bool AddGrpcConnection(string url, string id)
+        public static bool AddGrpcConnection(string port)
         {
+            string url = "http://localhost:" + port;
             Console.WriteLine(">>> Initializing Grpc Connection for url: " + url);
             try
             {
-                GrpcChannel channel = GrpcChannel.ForAddress("http://localhost:" + nextPCSPort);
-                PCSServices.PCSServicesClient client = new PCSServices.PCSServicesClient(channel);
-                gRPCpuppetMasterToPCSconnetionsDictionary.Add(id, client);
-                nextPCSPort++;
+                GrpcChannel channel = GrpcChannel.ForAddress(url);
+                PCSServices.PCSServicesClient pcsClient = new PCSServices.PCSServicesClient(channel);
+                gRPCpuppetMasterToPCSconnetionsDictionary.Add(port, pcsClient);
                 return true;
             }
             catch (UriFormatException)
@@ -35,30 +92,22 @@ namespace PuppetMaster
             }
         }
 
-        public static bool EstablishGrpcConnection(string url, string id)
+        public static bool EstablishPCSConnection(string port)
         {
-            bool establishedConnection = AddGrpcConnection(url, id);
-            if (establishedConnection)
+            string url = "http://localhost:" + port;
+            Console.WriteLine(">>> Initializing Grpc Connection for url: " + url);
+            try
             {
-                processCreationServiceUrlsDictionary.Add(id, url);
+                GrpcChannel channel = GrpcChannel.ForAddress(url);
+                PCSServices.PCSServicesClient pcsClient = new PCSServices.PCSServicesClient(channel);
+                gRPCpuppetMasterToPCSconnetionsDictionary.Add(port, pcsClient);
                 return true;
             }
-            return false;
-        }
-
-        public static bool EstablishPCSConnection(string url, string id)
-        {
-            if (IsUrlAvailable(url))
+            catch (UriFormatException)
             {
-                Console.WriteLine(">>> Starting new PCS with url: " + url);
-                return EstablishGrpcConnection(url, id);
+                Console.WriteLine(">>> Exception. URI format is incorrect");
+                return false;
             }
-            return true;
-        }
-
-        public static bool IsUrlAvailable(string url)
-        {
-            return !processCreationServiceUrlsDictionary.ContainsValue(url);
         }
     }
 }

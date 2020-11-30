@@ -14,34 +14,26 @@ namespace Shared.Util
 
         // This dictionary stores the mapping between partitions and nodes.
 
-        public static Dictionary<string, List<string>> partitionMapping = new Dictionary<string, List<string>>()
+        public static Dictionary<string, string[]> partitionMapping = new Dictionary<string, string[]>();
+        public static string replicationFactor;
+
+
+        public static void UpdateReplicasNumber(string r)
         {
-            { 
-                "1", new List<string> { "server1", "server2" }
-            },
-            {
-                "2", new List<string> { "server2", "server3" }
-            }
-        };
-
-        public static int replicasNumber;
-
-
-        public static void UpdateReplicasNumber(int r)
-        {
-            replicasNumber = r;
+            replicationFactor = r;
             Console.WriteLine(">>> Replication Factor updated successfully");
         }
 
-        private static bool TryGetPartition(string partitionName, out List<string> serverIds)
+        private static bool TryGetPartition(string partitionName, out string[] serverIds)
         {
             return partitionMapping.TryGetValue(partitionName, out serverIds);
         }
 
-        public static void AddPartition(string partitionName, List<string> serverIds)
+        public static void CreatePartition(string replicationFactor, string partitionName, string[] serverIds)
         {
-            List<string> existingServerIds;
-            if (TryGetPartition(partitionName, out existingServerIds))
+            UpdateReplicasNumber(replicationFactor);
+
+            if (TryGetPartition(partitionName, out string[] existingServerIds))
             {
                 partitionMapping.Remove(partitionName);
                 Console.WriteLine(">>> Removing old partition...");
@@ -57,7 +49,7 @@ namespace Shared.Util
             return partitionMapping[partition_id][0];
         }
 
-        public static List<string> getPartitionNodes(string partition_id)
+        public static string[] getPartitionNodes(string partition_id)
         {
             return partitionMapping[partition_id];
         }

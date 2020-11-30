@@ -129,22 +129,9 @@ namespace PCS
             PartitionMapping.CreatePartition(replicationFactor, partitionName, serverIds);
         }
 
-        //public void ShutdownAllProcesses()
-        //{
-        //    Console.WriteLine(">>> Exiting all processes");
-        //    foreach (Process process in processesList)
-        //    {
-        //        try
-        //        {
-        //            process.CloseMainWindow();
-        //            process.Close();
-        //        }
-        //        catch (InvalidOperationException)
-        //        {
-        //            Console.WriteLine(">>> Exception, Process is already closed");
-        //        }
-        //    }
-        //    Console.WriteLine(">>> Done.");
-        //}
+        public void UpdatePartitions(string crashedServerId)
+        {
+            PartitionMapping.RemoveCrashedServerFromAllPartitions(crashedServerId);
+        }
     }
 }

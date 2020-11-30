@@ -13,6 +13,15 @@ service PCSServices {
   rpc Crash (CrashRequest) returns (CrashReply);
   rpc UpdateReplicasNumber (UpdateReplicasNumberRequest) returns (UpdateReplicasNumberReply);
   rpc CreatePartition (CreatePartitionRequest) returns (CreatePartitionReply);
+  rpc UpdatePartitions (UpdatePartitionsRequest) returns (UpdatePartitionsReply);
+}
+
+message UpdatePartitionsRequest {
+    string crashedServerId = 1;
+}
+
+message UpdatePartitionsReply {
+	string updatePartitions = 1;
 }
 
 message CreatePartitionRequest {

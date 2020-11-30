@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Shared.Util
 {
@@ -35,8 +36,9 @@ namespace Shared.Util
 
             if (TryGetPartition(partitionName, out string[] existingServerIds))
             {
-                partitionMapping.Remove(partitionName);
-                Console.WriteLine(">>> Removing old partition...");
+                partitionMapping[partitionName] = serverIds;
+                Console.WriteLine(">>> Partition was updated with success");
+                return;
             }
             partitionMapping.Add(partitionName, serverIds);
             Console.WriteLine(">>> New partition created with success");
@@ -52,6 +54,45 @@ namespace Shared.Util
         public static string[] getPartitionNodes(string partition_id)
         {
             return partitionMapping[partition_id];
+        }
+
+        public static void UpdatePartition(string partitionName, string crashedServerId)
+        {
+            if(TryGetPartition(partitionName, out string[] currentServerIds))
+            {
+                string[] updatedListOfServerIds = currentServerIds.Where(val => val != crashedServerId).ToArray();
+                if(updatedListOfServerIds.Length != 0)
+                {
+                    Console.WriteLine(">>> Updating a partition " + partitionName + " That contains Server " + crashedServerId);
+                    partitionMapping[partitionName] = updatedListOfServerIds;
+                }
+                else
+                {
+                    Console.WriteLine(">>> Removing empty partition: " + partitionName);
+                    partitionMapping.Remove(partitionName);
+                }
+            }
+        }
+
+        public static void RemoveCrashedServerFromAllPartitions(string serverId)
+        {
+            List<string> partitionsToUpdate = new List<string>();
+           
+            foreach (KeyValuePair<string, string[]> partition in partitionMapping)
+            {
+                foreach (string serverInPartition in partition.Value)
+                {
+                    if (serverInPartition == serverId)
+                    {
+                        partitionsToUpdate.Add(partition.Key);
+                    }
+                }
+            }
+
+            foreach(string partitionName in partitionsToUpdate)
+            {
+                UpdatePartition(partitionName, serverId);
+            }
         }
     }
 }

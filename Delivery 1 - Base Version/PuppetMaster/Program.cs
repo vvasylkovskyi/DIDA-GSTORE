@@ -129,7 +129,7 @@ namespace PuppetMaster
                     {
                         Console.WriteLine(" >>> Invalid Argument. Replicas Number should be a number");
                     }
-                    Task.Run(() => UpdateReplicasNumber(r));
+                    UpdateReplicasNumber(r);
                     break;
                 case "Partition":
                     string replicasNumberString = commandsList[1];
@@ -160,65 +160,51 @@ namespace PuppetMaster
                         break;
                     }
 
-                    Task.Run(() => CreatePartition(replicasNumberString, partitionName, serverIds.ToArray()));
+                    CreatePartition(replicasNumberString, partitionName, serverIds.ToArray());
                     break;
                 case "Server":
                     string serverId = commandsList[1];
                     string url = commandsList[2];
                     string minDelay = commandsList[3];
                     string maxDelay = commandsList[4];
-                    Task.Run(() => StartServerProcess(serverId, url, minDelay, maxDelay));
+                    StartServerProcess(serverId, url, minDelay, maxDelay);
                     break;
                 case "Client":
                     string username = commandsList[1];
                     string clientUrl = commandsList[2];
                     string scriptFile = commandsList[3];
-                    Task.Run(() => StartClientProcess(username, clientUrl, scriptFile));
+                    StartClientProcess(username, clientUrl, scriptFile);
                     break;
                 case "Status":
-                    Task.Run(() => GlobalStatus());
+                    GlobalStatus();
                     break;
                 case "Crash":
                     string crashServerId = commandsList[1];
-                    Task.Run(() => CrashServer(crashServerId));
+                    CrashServer(crashServerId);
                     break;
                 case "Freeze":
                     string freezeServerId = commandsList[1];
-                    Task.Run(() => FreezServer(freezeServerId));
+                    FreezServer(freezeServerId);
                     break;
                 case "Unfreeze":
                     string unfreezeServerId = commandsList[1];
-                    Task.Run(() => UnfreezServer(unfreezeServerId));
+                    UnfreezServer(unfreezeServerId);
                     break;
                 case "Wait":
                     string timeMs = commandsList[1];
                     Console.WriteLine(">>> Waiting...");
                     Thread.Sleep(int.Parse(timeMs));
                     break;
-                //case "q":
-                //    foreach (IProcessCreationService PCS in processCreationServiceDictionary.Values)
-                //    {
-                //        try
-                //        {
-                //            PCS.ShutdownAllProcesses();
-                //        }
-                //        catch
-                //        {
-                //            // pragram can be already closed
-                //        }
-                //    }
-                //    Environment.Exit(1);
-                //    break;
             }
         }
 
         private void UpdateReplicasNumber(string replicationFactor)
         {
             Console.WriteLine(">>> Updating Replication Factor...");
-            Parallel.ForEach(ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values, gRPCpuppetMasterToPCSconnetion => {
+            foreach(PCSServices.PCSServicesClient gRPCpuppetMasterToPCSconnetion in ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values) {
                 UpdateReplicasNumberReply updateReplicasNumberReply = gRPCpuppetMasterToPCSconnetion.UpdateReplicasNumber(new UpdateReplicasNumberRequest { ReplicationFactor = replicationFactor });
                 Console.WriteLine(">>> Replication Factor response from PCS: " + updateReplicasNumberReply.UpdateReplicasNumber);
-            });    
+            };    
         }
 
         private void CreatePartition(string replicationFactor, string partitionName, string[] serverIds)
@@ -227,10 +213,20 @@ namespace PuppetMaster
             string[] stringArray = new string[] { replicationFactor, partitionName };
             string[] args = stringArray.Concat(serverIds).ToArray();
             string argsString = Utilities.BuildArgumentsString(args);
-            Parallel.ForEach(ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values, gRPCpuppetMasterToPCSconnetion => {
+            foreach(PCSServices.PCSServicesClient gRPCpuppetMasterToPCSconnetion in ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values) {
                 CreatePartitionReply createPartitionReply = gRPCpuppetMasterToPCSconnetion.CreatePartition(new CreatePartitionRequest { Args = argsString });
                 Console.WriteLine(">>> Create Partition response from PCS: " + createPartitionReply.CreateParititon);
-            }); 
+            }; 
+        }
+
+        private void GlobalStatus()
+        {
+            Console.WriteLine(">>> Getting Processes Status");
+            foreach (PCSServices.PCSServicesClient gRPCpuppetMasterToPCSconnetion in ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values)
+            {
+                StatusReply statusReply = gRPCpuppetMasterToPCSconnetion.GlobalStatus(new StatusRequest { Localhost = "1" });
+                Console.WriteLine(statusReply.Status);
+            };
         }
 
         private void UnfreezServer(string serverId)
@@ -271,17 +267,39 @@ namespace PuppetMaster
                 return;
             }
 
-            CrashReply crashReply = server.Crash(new CrashRequest { ServerId = serverId });
-            Console.WriteLine(crashReply.Crash);
-        }
+            PartitionMapping.RemoveCrashedServerFromAllPartitions(serverId);
 
-        private void GlobalStatus()
-        {
-            Console.WriteLine(">>> Getting Processes Status");
-            Parallel.ForEach(ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values, gRPCpuppetMasterToPCSconnetion => {
-                StatusReply statusReply = gRPCpuppetMasterToPCSconnetion.GlobalStatus(new StatusRequest { Localhost = "1" });
-                Console.WriteLine(statusReply.Status);
-            });
+            // Before crashing a server, need to notify all the remaining PCS about the crash.
+            // Also, update the partitionsMapping by removing the crashed server from each partition
+            foreach (PCSServices.PCSServicesClient gRPCpuppetMasterToPCSconnetion in ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values)
+            {
+                UpdatePartitionsReply updatePartitionsReply = gRPCpuppetMasterToPCSconnetion.UpdatePartitions(new UpdatePartitionsRequest { CrashedServerId = serverId });
+                Console.WriteLine(">>> Partitions Updated response: " + updatePartitionsReply.UpdatePartitions);
+            };
+
+            try
+            {
+                CrashReply crashReply = server.Crash(new CrashRequest { ServerId = serverId });
+            }
+            catch
+            {
+                 // Crash Command makes a server crash. So no CrashReply is ever going to be returned
+            }
+
+            string port = "";
+            // Remove server from port to id dictionary as it is crashed
+            foreach (KeyValuePair<string, string> pcsPortToServerOrClientIdKvp in ConnectionUtils.pcsPortToServerOrClientIdDictionary)
+            {
+                if(pcsPortToServerOrClientIdKvp.Key == serverId)
+                {
+                    port = pcsPortToServerOrClientIdKvp.Value;
+                    ConnectionUtils.pcsPortToServerOrClientIdDictionary.Remove(pcsPortToServerOrClientIdKvp.Key);
+                    break;
+                }
+            }
+
+            // Remove server from gRPC dictionary as it is crashed
+            ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Remove(port);
         }
 
         private void StartServerProcess(string serverId, string url, string minDelay, string maxDelay)

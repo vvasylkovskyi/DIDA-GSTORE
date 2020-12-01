@@ -29,7 +29,16 @@ namespace DataStoreClient
 
         public Program()
         {
-            startProgram();
+        }
+
+        public Program(string[] args, bool fromCMD)
+        {
+            if (fromCMD)
+            {
+                string username = args[0];
+                string clientUrl = args[1];
+                startProgram(username, clientUrl);
+            }
         }
 
         public Program StartClient(string[] args, bool fromCMD)
@@ -37,30 +46,20 @@ namespace DataStoreClient
             return new Program(args, fromCMD);
         }
 
-        public Program(string[] args, bool fromCMD)
-        {
-            if(fromCMD)
-            {
-                string username = args[0];
-                string clientUrl = args[1];
-                string scriptName = args[2];
-
-                ReadScriptFile(scriptName);
-            }
-        }
-
-        private void startProgram()
+        private void startProgram(string username, string clientUrl)
         {
             // allow http traffic in grpc
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             Console.WriteLine("I'm ready to work");
-
-            // if (debug_console)
-            //    Console.WriteLine("clientID= " + server_id + "; url= " + url);
+            Console.WriteLine("clientID= " + username + "; url= " + clientUrl);
         }
 
         public void Init(string[] args)
         {
+            string username = args[0];
+            string clientUrl = args[1];
+            startProgram(username, clientUrl);
+
             Console.WriteLine(">>> Started client process");
             Console.WriteLine(">>> Please write a command (use 'help' to get a list of available commands)");
             while (true)
@@ -80,7 +79,7 @@ namespace DataStoreClient
             ServerUrlMapping.CreateServerUrlMapping(serverUrlMapping);
         }
 
-        private void ReadScriptFile(string fileName)
+        public void ReadScriptFile(string fileName)
         {
             string command;
             Console.WriteLine(">>> File name is: " + fileName);

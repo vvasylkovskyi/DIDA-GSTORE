@@ -14,6 +14,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Util\Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)protos\DataStoreServices.proto" />
     <None Include="$(MSBuildThisFileDirectory)protos\ServerCommunicationService.proto" />
   </ItemGroup>
 </Project>

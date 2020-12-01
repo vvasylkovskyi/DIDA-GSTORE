@@ -22,24 +22,9 @@
     <ProjectReference Include="..\DataStoreServer\DataStoreServer.csproj" />
     <PackageReference Include="Grpc.Net.ClientFactory" Version="2.23.2" />
     <PackageReference Include="Grpc.AspNetCore.Server" Version="2.23.2" />
+	<Protobuf Include="..\Shared\protos\PuppetMaster.proto" GrpcServices="Server"></Protobuf>
+	<Protobuf Include="..\Shared\protos\PCS.proto" GrpcServices="Client"></Protobuf>
   </ItemGroup>
 
-  <ItemGroup>
-    <Protobuf Remove="..\Shared\protos\DataStoreServices.proto" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Remove="PuppetMasterServices.proto" />
-    <None Remove="PuppetMasterServices.proto" />
-    <None Remove="Protos\PuppetMaster.proto" />
-  </ItemGroup>
-  <ItemGroup>
-    <Protobuf Include="Protos\PuppetMaster.proto" GrpcServices="Server">
-      <Link>Protos\PuppetMaster.proto</Link>
-    </Protobuf>
-    <Protobuf Include="..\PCS\PCS.proto" GrpcServices="Client">
-      <Link>Protos\PCS.proto</Link>
-    </Protobuf>
-  </ItemGroup>
   <Import Project="..\Shared\Shared.projitems" Label="Shared" />
-
 </Project>

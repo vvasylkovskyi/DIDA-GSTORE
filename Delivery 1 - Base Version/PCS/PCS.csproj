@@ -19,20 +19,9 @@
     </PackageReference>
     <PackageReference Include="Grpc.AspNetCore.Server" Version="2.23.2" />
     <PackageReference Include="Grpc.Net.ClientFactory" Version="2.23.2" />
+	<Protobuf Include="..\Shared\protos\PuppetMaster.proto" GrpcServices="Client"></Protobuf>
+	<Protobuf Include="..\Shared\protos\PCS.proto" GrpcServices="Server"></Protobuf>
   </ItemGroup>
-  <ItemGroup>
-    <None Remove="PCS.proto" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Protos\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Protobuf Include="..\PuppetMaster\Protos\PuppetMaster.proto" GrpcServices="Client">
-      <Link>Protos\PuppetMaster.proto</Link>
-    </Protobuf>
-    <Protobuf Include="PCS.proto" GrpcServices="Server">
-      <Link>Protos\PCS.proto</Link>
-    </Protobuf>
-  </ItemGroup>
+	
   <Import Project="..\Shared\Shared.projitems" Label="Shared" Condition="Exists('..\Shared\Shared.projitems')" />
 </Project>

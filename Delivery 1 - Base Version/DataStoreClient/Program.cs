@@ -11,6 +11,8 @@ namespace DataStoreClient
 {
     public class Program
     {
+        private bool debug_console = true;
+
         private GrpcChannel channel;
         private DataStoreService.DataStoreServiceClient client;
         private string attached_server_id;
@@ -341,6 +343,9 @@ namespace DataStoreClient
             // allow http traffic in grpc
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             Console.WriteLine("I'm ready to work");
+
+            // if (debug_console)
+            //    Console.WriteLine("clientID= " + server_id + "; url= " + url);
         }
 
         public void GetStatus()

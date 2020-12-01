@@ -6,6 +6,7 @@ namespace DataStoreServer
 {
     public class Program
     {
+        private bool debug_console = true;
         private bool _isFrozen = false;
         private string serverId = "";
 
@@ -51,6 +52,9 @@ namespace DataStoreServer
 
 
             Console.WriteLine("I'm ready to work");
+            
+            if (debug_console)
+                Console.WriteLine("serverID= " + server_id + "; url= " + url + "; min_delay= " + min_delay + "; max_delay= " + max_delay);
         }
 
         public void Init(string[] args)

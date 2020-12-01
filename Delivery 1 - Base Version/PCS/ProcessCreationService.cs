@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Grpc.Core;
 using Grpc.Net.Client;
 using PuppetMaster.Protos;
@@ -81,14 +82,28 @@ namespace PCS
             Console.WriteLine(">>> Starting Server...");
             DataStoreServer.Program server = new DataStoreServer.Program().StartServer(args);
             this.server = server;
+
+            // When creating a new Server Program it has no context
+            // These two functions will update the new server context with the partitions and server that PCS knows
+            this.server.UpdateServersContext(ServerUrlMapping.serverUrlMapping);
+            this.server.UpdatePartitionsContext(PartitionMapping.partitionToReplicationFactorMapping, PartitionMapping.partitionMapping);
+
             pcsRole = "server";
         }
 
         public void StartClient(string[] args)
         {
             Console.WriteLine(">>> Starting Client...");
-            DataStoreClient.Program client = new DataStoreClient.Program().StartClient(args);
+            bool fromCMD = true;
+            DataStoreClient.Program client = new DataStoreClient.Program();
             this.client = client;
+             
+            // When creating a new Client Program it has no context
+            // These two functions will update the new client context with the partitions and server that PCS knows
+            this.client.UpdateServersContext(ServerUrlMapping.serverUrlMapping);
+            this.client.UpdatePartitionsContext(PartitionMapping.partitionToReplicationFactorMapping, PartitionMapping.partitionMapping);
+
+            this.client.StartClient(args, fromCMD);
             pcsRole = "client";
         }
 
@@ -119,9 +134,9 @@ namespace PCS
             }
         }
 
-        public void UpdateReplicasNumber(string replicationFactor)
+        public void UpdateReplicationFactor(string replicationFactor)
         {
-            PartitionMapping.UpdateReplicasNumber(replicationFactor);
+            PartitionMapping.UpdateReplcationFactor(replicationFactor);
         }
 
         public void CreatePartition(string replicationFactor, string partitionName, string[] serverIds)
@@ -129,9 +144,17 @@ namespace PCS
             PartitionMapping.CreatePartition(replicationFactor, partitionName, serverIds);
         }
 
-        public void UpdatePartitions(string crashedServerId)
+        public void UpdateServers(string serverId, string serverUrl)
         {
-            PartitionMapping.RemoveCrashedServerFromAllPartitions(crashedServerId);
+            ServerUrlMapping.AddServerToServerUrlMapping(serverId, serverUrl);
+
+            if(pcsRole == "server")
+            {
+                server.UpdateServersContext(ServerUrlMapping.serverUrlMapping);
+            } else if(pcsRole == "client")
+            {
+                client.UpdateServersContext(ServerUrlMapping.serverUrlMapping);
+            }
         }
     }
 }

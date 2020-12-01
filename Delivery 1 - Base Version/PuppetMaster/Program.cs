@@ -48,14 +48,14 @@ namespace PuppetMaster
 
             Console.WriteLine(">>> Started Running Puppet Master");
 
-            listenToCommands();
+            ListenToCommands();
         }
 
         #endregion
 
         #region read commands
 
-        private void listenToCommands()
+        private void ListenToCommands()
         {
             string command = "";
             while (command != "1" || command != "2" || command != "q")
@@ -77,8 +77,6 @@ namespace PuppetMaster
                 {
                     Environment.Exit(1);
                 }
-                
-
             }
         }
 
@@ -267,16 +265,6 @@ namespace PuppetMaster
                 return;
             }
 
-            PartitionMapping.RemoveCrashedServerFromAllPartitions(serverId);
-
-            // Before crashing a server, need to notify all the remaining PCS about the crash.
-            // Also, update the partitionsMapping by removing the crashed server from each partition
-            foreach (PCSServices.PCSServicesClient gRPCpuppetMasterToPCSconnetion in ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values)
-            {
-                UpdatePartitionsReply updatePartitionsReply = gRPCpuppetMasterToPCSconnetion.UpdatePartitions(new UpdatePartitionsRequest { CrashedServerId = serverId });
-                Console.WriteLine(">>> Partitions Updated response: " + updatePartitionsReply.UpdatePartitions);
-            };
-
             try
             {
                 CrashReply crashReply = server.Crash(new CrashRequest { ServerId = serverId });
@@ -313,6 +301,14 @@ namespace PuppetMaster
                 Console.WriteLine("Cannot find connected PCS");
                 return;
             }
+
+            // Before starting a server, need to notify all the PCS about the new server.
+            // Update the serverUrlMapping by adding the new server
+            foreach (PCSServices.PCSServicesClient gRPCpuppetMasterToPCSconnetion in ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values)
+            {
+                UpdateServersReply UpdateServersReply = gRPCpuppetMasterToPCSconnetion.UpdateServers(new UpdateServersRequest { ServerId = serverId, ServerUrl = url });
+                Console.WriteLine(">>> Servers Updated response: " + UpdateServersReply.UpdateServers);
+            };
 
             Console.WriteLine("Invoking Start Server...");
             StartServerReply startServerReply = pcs.StartServer(new StartServerRequest { Args = argsString });

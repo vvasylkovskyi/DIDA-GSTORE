@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Shared.Util;
 using System.Threading;
-using Grpc.Core;
+using System.IO;
 
 namespace DataStoreClient
 {
@@ -30,9 +30,28 @@ namespace DataStoreClient
             startProgram();
         }
 
-        public Program StartClient(string[] args)
+        public Program StartClient(string[] args, bool fromCMD)
         {
-            return new Program();
+            return new Program(args, fromCMD);
+        }
+
+        public Program(string[] args, bool fromCMD)
+        {
+            if(fromCMD)
+            {
+                string username = args[0];
+                string clientUrl = args[1];
+                string scriptName = args[2];
+
+                ReadScriptFile(scriptName);
+            }
+        }
+
+        private void startProgram()
+        {
+            // allow http traffic in grpc
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+            Console.WriteLine("I'm ready to work");
         }
 
         public void Init(string[] args)
@@ -41,13 +60,46 @@ namespace DataStoreClient
             Console.WriteLine(">>> Please write a command (use 'help' to get a list of available commands)");
             while (true)
             {
-                readCommandFromCommandLine(Console.ReadLine());
+                ReadCommandFromCommandLine(Console.ReadLine());
                 Console.WriteLine("\n>>> Please write a command");
             }
         }
 
-        private void readCommandFromCommandLine(string commands)
+        public void UpdatePartitionsContext(Dictionary<string, string> partitionToReplicationFactorMapping, Dictionary<string, string[]> partitionMapping)
         {
+            PartitionMapping.CreatePartitionMapping(partitionToReplicationFactorMapping, partitionMapping);
+        }
+
+        public void UpdateServersContext(Dictionary<string, string> serverUrlMapping)
+        {
+            ServerUrlMapping.CreateServerUrlMapping(serverUrlMapping);
+        }
+
+        private void ReadScriptFile(string fileName)
+        {
+            string command;
+            Console.WriteLine(">>> File name is: " + fileName);
+            StreamReader file;
+
+            string pathFromBaseProject = "../scripts/" + fileName;
+            try
+            {
+                file = new StreamReader(pathFromBaseProject);
+            }
+            catch (DirectoryNotFoundException)
+            {
+                Console.WriteLine(">>> Exception. File Not Found. Please Try again");
+                return;
+            }
+            while ((command = file.ReadLine()) != null)
+            {
+                ReadCommandFromCommandLine(command);
+            }
+        }
+
+        private void ReadCommandFromCommandLine(string commands)
+        {
+            Console.WriteLine(">>> Reading command: " + commands);
             if (string.IsNullOrWhiteSpace(commands))
                 return;
             string[] commandsList = commands.Split(' ');
@@ -143,8 +195,6 @@ namespace DataStoreClient
             }
         }
 
-
-
         private void read(string partition_id, string object_id, string server_id)
         {
             string result = "N/A";
@@ -157,9 +207,11 @@ namespace DataStoreClient
                 ObjectId = object_id
             };
 
+            Console.WriteLine(">>> Reading from the server...");
             // if the client is attached to a server
             if (!string.IsNullOrEmpty(attached_server_id))
             {
+                Console.WriteLine(">>> Reading from the Attached Server: " + attached_server_id);
                 // read value from attached server
                 reply = client.Read(new ReadRequest { ObjectKey = object_key });
 
@@ -174,7 +226,9 @@ namespace DataStoreClient
             if ((!got_result) && (!server_id.Equals("-1")))
             {
                 // read value from alternative server
+                Console.WriteLine(">>> Attach to new Server: " + server_id);
                 reattachServer(server_id);
+                Console.WriteLine(">>> Read request...");
                 reply = client.Read(new ReadRequest { ObjectKey = object_key });
                 if (reply.ObjectExists)
                 {
@@ -182,15 +236,15 @@ namespace DataStoreClient
                     got_result = true;
                 }
             }
-
-            Console.WriteLine(result);
+            Console.WriteLine(">>> Read Result: " + result);
         }
 
         private void write(string partition_id, string object_id, string value)
         {
             WriteReply reply;
-
+            Console.WriteLine(">>> Get Partition Master from Partition Named: " + partition_id);
             string partition_master_server_id = PartitionMapping.getPartitionMaster(partition_id);
+            Console.WriteLine(">>> Partition Master Server ID: " + partition_master_server_id);
             reattachServer(partition_master_server_id);
 
             var object_key = new DataStoreKeyDto
@@ -204,6 +258,7 @@ namespace DataStoreClient
                 Val = value
             };
 
+            Console.WriteLine(">>> Write request...");
             reply = client.Write(new WriteRequest { ObjectKey = object_key, Object = object_value });
         }
 
@@ -308,7 +363,7 @@ namespace DataStoreClient
                 foreach (string command in commands_in_repeat_block)
                 {
                     string replacedCommand = command.Replace("$i", curr_cycle.ToString());
-                    readCommandFromCommandLine(replacedCommand);
+                    ReadCommandFromCommandLine(replacedCommand);
                 }
             }
 
@@ -323,7 +378,9 @@ namespace DataStoreClient
 
         private void attachServer(string server_id)
         {
-            string url = ServerUrlMapping.getServerUrl(server_id);
+            Console.WriteLine(">>> Attaching to server with id: " + server_id);
+            string url = ServerUrlMapping.GetServerUrl(server_id);
+            Console.WriteLine(">>> Server URL is: " + url);
             channel = GrpcChannel.ForAddress(url);
             client = new DataStoreService.DataStoreServiceClient(channel);
             attached_server_id = server_id;
@@ -333,14 +390,6 @@ namespace DataStoreClient
         {
             deattachServer();
             attachServer(server_id);
-        }
-
-
-        private void startProgram()
-        {
-            // allow http traffic in grpc
-            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-            Console.WriteLine("I'm ready to work");
         }
 
         public void GetStatus()

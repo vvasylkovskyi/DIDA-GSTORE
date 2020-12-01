@@ -41,7 +41,7 @@ namespace DataStoreServer.Domain
                 if (channel != null)
                     channel.ShutdownAsync();
 
-                string url = ServerUrlMapping.getServerUrl(replica);
+                string url = ServerUrlMapping.GetServerUrl(replica);
                 channel = GrpcChannel.ForAddress(url);
                 replica_channels[replica] = channel;
                 replica_clients[replica] = new ServerCommunicationService.ServerCommunicationServiceClient(channel);

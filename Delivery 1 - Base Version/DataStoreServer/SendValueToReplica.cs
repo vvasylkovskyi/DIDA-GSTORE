@@ -18,15 +18,15 @@ namespace DataStoreServer
 
         public void doWork() {
             Partition partition = server.getPartition(request.ObjectKey.PartitionId);
-            Dictionary<int, ServerCommunicationService.ServerCommunicationServiceClient> PartitionReplicas = partition.getReplicas();
+            Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> PartitionReplicas = partition.getReplicas();
             lockReplicas(PartitionReplicas, this.request.ObjectKey);
             WriteReply reply = write_new_value(PartitionReplicas, request);
             server.setWriteResult(request,reply);
         }
 
-        public void lockReplicas(Dictionary<int, ServerCommunicationService.ServerCommunicationServiceClient> replicas, DataStoreKeyDto key)
+        public void lockReplicas(Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> replicas, DataStoreKeyDto key)
         {
-            foreach (int replica_id in replicas.Keys)
+            foreach (string replica_id in replicas.Keys)
             {
                 try
                 {
@@ -45,9 +45,9 @@ namespace DataStoreServer
             }
         }
 
-        public WriteReply write_new_value(Dictionary<int, ServerCommunicationService.ServerCommunicationServiceClient> replicas, WriteRequest request)
+        public WriteReply write_new_value(Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> replicas, WriteRequest request)
         {
-            foreach (int replica_id in replicas.Keys)
+            foreach (string replica_id in replicas.Keys)
             {
                 try
                 {

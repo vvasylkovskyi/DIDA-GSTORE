@@ -94,5 +94,10 @@ namespace DataStoreServer
         {
             return serverId;
         }
+
+        public ServerImp GetServer()
+        {
+            return server;
+        }
     }
 }

@@ -2,31 +2,55 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Shared.Util;
+using Grpc.Net.Client;
 
 namespace DataStoreServer.Domain
 {
     public class Partition
     {
-        private int id;
-        private Dictionary<int, ServerCommunicationService.ServerCommunicationServiceClient> replicas;
-        private int master;
-        private DataStore data = new DataStore();
+        private string id;
+        private DataStore data;
 
-        public Partition(int id, Dictionary<int, ServerCommunicationService.ServerCommunicationServiceClient> replicas, int master_id)
+        private Dictionary<string, GrpcChannel> replica_channels;
+        private Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> replica_clients;
+
+        public Partition(string id)
         {
             this.id = id;
-            this.replicas = replicas;
-            this.master = master_id;
+            this.data = new DataStore();
+            this.replica_channels = new Dictionary<string, GrpcChannel>();
+            this.replica_clients = new Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient>();
+            updateConnectionToReplicas(id);
         }
 
-        public int getName()
+        public string getName()
         {
             return id;
         }
 
-        public Dictionary<int, ServerCommunicationService.ServerCommunicationServiceClient> getReplicas()
+        private void updateConnectionToReplicas(string partition_id)
         {
-            return replicas;
+            string[] replicas = PartitionMapping.getPartitionNodes(partition_id);
+
+            foreach (string replica in replicas)
+            {
+                GrpcChannel channel;
+
+                channel = replica_channels[replica];
+                if (channel != null)
+                    channel.ShutdownAsync();
+
+                string url = ServerUrlMapping.getServerUrl(replica);
+                channel = GrpcChannel.ForAddress(url);
+                replica_channels[replica] = channel;
+                replica_clients[replica] = new ServerCommunicationService.ServerCommunicationServiceClient(channel);
+            }
+        }
+
+        public Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> getReplicas()
+        {
+            return replica_clients;
         }
 
         public void addNewOrUpdateExisting(DataStoreKey key, DataStoreValue value)
@@ -48,9 +72,9 @@ namespace DataStoreServer.Domain
             return data.objectExists(key);
         }
 
-        public int getMasterID()
+        public string getMasterID()
         {
-            return master;
+            return PartitionMapping.getPartitionMaster(this.id);
         }
 
         public void lockObject(DataStoreKey key, bool locked)

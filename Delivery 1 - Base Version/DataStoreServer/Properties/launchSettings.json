@@ -2,7 +2,7 @@
   "profiles": {
     "DataStoreServer": {
       "commandName": "Project",
-      "commandLineArgs": "1 localhost:30661 1 5"
+      "commandLineArgs": "1 http://localhost:30661 1 5"
     }
   }
 }

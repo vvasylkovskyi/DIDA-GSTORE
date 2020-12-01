@@ -18,6 +18,7 @@ namespace DataStoreServer
         private ThrPool tpool = new ThrPool(1, 10);
         private Dictionary<WriteRequest, WriteReply> writeResults = new Dictionary<WriteRequest, WriteReply>();
         private string url;
+        private bool _isFrozen = false;
 
         public ServerImp(string server_id, string url, int min_delay, int max_delay)
         {
@@ -43,7 +44,10 @@ namespace DataStoreServer
             server.Start();
         }
 
-
+        public void setFreeze(Boolean f) {
+            this._isFrozen = f;
+            tpool.setFreeze(_isFrozen);
+        }
         public Partition getPartition(string partition_id)
         {
             foreach (Partition p in partitions)

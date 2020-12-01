@@ -89,12 +89,14 @@ namespace DataStoreServer
         {
             Console.WriteLine("I am going to freeze");
             _isFrozen = true;
+            server.setFreeze(_isFrozen);
         }
 
         public void Unfreeze()
         {
             Console.WriteLine("I am going to unfreeze");
             _isFrozen = false;
+            server.setFreeze(_isFrozen);
         }
 
         public void SetServerId(string serverId) 

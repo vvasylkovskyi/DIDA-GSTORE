@@ -13,6 +13,7 @@ namespace DataStoreServer
 	{
 		private CircularBuffer<ThrWork> buf;
 		private Thread[] pool;
+		private bool _isFreeze = false;
 		public ThrPool(int thrNum, int bufSize)
 		{
 			buf = new CircularBuffer<ThrWork>(bufSize);
@@ -36,7 +37,23 @@ namespace DataStoreServer
 			while (true)
 			{
 				ThrWork tw = buf.Consume();
+				getPermission();
 				tw();
+			}
+		}
+
+		public void getPermission() {
+			lock (this) {
+				while (_isFreeze) {
+					Monitor.Wait(this);
+				}
+			}
+		}
+
+		public void setFreeze(bool f) {
+			lock (this) {
+				_isFreeze = f;
+				Monitor.PulseAll(this);
 			}
 		}
 	}

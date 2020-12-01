@@ -43,16 +43,14 @@ namespace PCS
 
         public void InitPCSServer(int port)
         {
+            Server server = new Server
+            {
+                Services = { PCSServices.BindService(new PCSImpl(this)) },
+                Ports = { new ServerPort("localhost", port, ServerCredentials.Insecure) }
+            };
+            server.Start();
 
-                Server server = new Server
-                {
-                    Services = { PCSServices.BindService(new PCSImpl(this)) },
-                    Ports = { new ServerPort("localhost", port, ServerCredentials.Insecure) }
-                };
-                server.Start();
-
-                Console.WriteLine(">>> PCS Server started");
-            
+            Console.WriteLine(">>> PCS Server started");   
         }
 
 
@@ -141,7 +139,7 @@ namespace PCS
 
         public void CreatePartition(string replicationFactor, string partitionName, string[] serverIds)
         {
-            PartitionMapping.CreatePartition(replicationFactor, partitionName, serverIds);
+            this.server.GetServer().createPartition(partitionName);
         }
 
         public void UpdateServers(string serverId, string serverUrl)

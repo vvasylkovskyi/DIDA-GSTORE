@@ -211,10 +211,11 @@ namespace PuppetMaster
             string[] stringArray = new string[] { replicationFactor, partitionName };
             string[] args = stringArray.Concat(serverIds).ToArray();
             string argsString = Utilities.BuildArgumentsString(args);
-            foreach(PCSServices.PCSServicesClient gRPCpuppetMasterToPCSconnetion in ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values) {
+            PartitionMapping.CreatePartition(replicationFactor, partitionName, serverIds);
+            foreach (PCSServices.PCSServicesClient gRPCpuppetMasterToPCSconnetion in ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values) {
                 CreatePartitionReply createPartitionReply = gRPCpuppetMasterToPCSconnetion.CreatePartition(new CreatePartitionRequest { Args = argsString });
                 Console.WriteLine(">>> Create Partition response from PCS: " + createPartitionReply.CreateParititon);
-            }; 
+            };
         }
 
         private void GlobalStatus()

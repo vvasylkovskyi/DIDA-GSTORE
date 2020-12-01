@@ -18,19 +18,13 @@ namespace DataStoreServer
 
         public override Task<ReadReply> Read(ReadRequest request, ServerCallContext context)
         {
-            return Task.FromResult(ReadHandler(request));
+            return Task.FromResult(server.ReadHandler(request));
         }
 
-        public ReadReply ReadHandler(ReadRequest request)
-        {
-
-            return null;
-        }
         public override Task<WriteReply> Write(WriteRequest request, ServerCallContext context)
         {
             return Task.FromResult(server.WriteHandler(request));
         }
-
 
         public override async Task<ListServerReply> ListServer(ListServerRequest request, ServerCallContext context)
         {

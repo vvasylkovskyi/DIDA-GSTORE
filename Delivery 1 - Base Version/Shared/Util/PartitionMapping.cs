@@ -16,12 +16,15 @@ namespace Shared.Util
         // This dictionary stores the mapping between partitions and nodes.
 
         public static Dictionary<string, string[]> partitionMapping = new Dictionary<string, string[]>();
-        public static string replicationFactor;
+        public static Dictionary<string, string> partitionToReplicationFactorMapping = new Dictionary<string, string>();
 
-
-        public static void UpdateReplicasNumber(string r)
+        public static void UpdateReplcationFactor(string replicationFactor)
         {
-            replicationFactor = r;
+            foreach(string partitionName in partitionToReplicationFactorMapping.Keys)
+            {
+                partitionToReplicationFactorMapping[partitionName] = replicationFactor;
+            }
+
             Console.WriteLine(">>> Replication Factor updated successfully");
         }
 
@@ -30,30 +33,37 @@ namespace Shared.Util
             return partitionMapping.TryGetValue(partitionName, out serverIds);
         }
 
+        public static void CreatePartitionMapping(Dictionary<string, string> partitionToReplicationFactorMapping, Dictionary<string, string[]> partitionMapping)
+        {
+            PartitionMapping.partitionToReplicationFactorMapping = partitionToReplicationFactorMapping;
+            PartitionMapping.partitionMapping = partitionMapping;
+        }
+
         public static void CreatePartition(string replicationFactor, string partitionName, string[] serverIds)
         {
-            UpdateReplicasNumber(replicationFactor);
+            UpdateReplcationFactor(replicationFactor);
 
             if (TryGetPartition(partitionName, out string[] existingServerIds))
             {
                 partitionMapping[partitionName] = serverIds;
+
                 Console.WriteLine(">>> Partition was updated with success");
                 return;
             }
             partitionMapping.Add(partitionName, serverIds);
             Console.WriteLine(">>> New partition created with success");
+            getPartitionMaster(partitionName);
 
         }
 
-        public static string getPartitionMaster(string partition_id)
+        public static string getPartitionMaster(string partitionName)
         {
-            // the first element in the node array is considered the partition master
-            return partitionMapping[partition_id][0];
+            return partitionMapping[partitionName][0];
         }
 
-        public static string[] getPartitionNodes(string partition_id)
+        public static string[] getPartitionNodes(string partitionName)
         {
-            return partitionMapping[partition_id];
+            return partitionMapping[partitionName];
         }
 
         public static void UpdatePartition(string partitionName, string crashedServerId)
@@ -71,27 +81,6 @@ namespace Shared.Util
                     Console.WriteLine(">>> Removing empty partition: " + partitionName);
                     partitionMapping.Remove(partitionName);
                 }
-            }
-        }
-
-        public static void RemoveCrashedServerFromAllPartitions(string serverId)
-        {
-            List<string> partitionsToUpdate = new List<string>();
-           
-            foreach (KeyValuePair<string, string[]> partition in partitionMapping)
-            {
-                foreach (string serverInPartition in partition.Value)
-                {
-                    if (serverInPartition == serverId)
-                    {
-                        partitionsToUpdate.Add(partition.Key);
-                    }
-                }
-            }
-
-            foreach(string partitionName in partitionsToUpdate)
-            {
-                UpdatePartition(partitionName, serverId);
             }
         }
     }

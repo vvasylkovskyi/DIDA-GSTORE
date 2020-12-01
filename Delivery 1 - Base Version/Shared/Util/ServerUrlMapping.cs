@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Shared.Util
 {
@@ -7,13 +6,33 @@ namespace Shared.Util
     {
         // This dictionary stores the mapping between server id and url
 
-        public static Dictionary<string, string> serverUrlMapping = new Dictionary<string, string>()
-        {
-            { "server1", "http://localhost:9081"},
-            { "server2", "http://localhost:9082"}
-        };
+        public static Dictionary<string, string> serverUrlMapping = new Dictionary<string, string>();
 
-        public static string getServerUrl(string server_id)
+        public static void CreateServerUrlMapping(Dictionary<string, string> serverUrlMapping)
+        {
+            ServerUrlMapping.serverUrlMapping = serverUrlMapping;
+        }
+
+        public static void AddServerToServerUrlMapping(string serverId, string serverUrl)
+        {
+            if(serverUrlMapping.Count == 0)
+            {
+                serverUrlMapping.Add(serverId, serverUrl);
+            }
+            else
+            {
+                if (!serverUrlMapping.ContainsKey(serverId))
+                {
+                    serverUrlMapping[serverId] = serverUrl;
+                }
+                else
+                {
+                    serverUrlMapping.Add(serverId, serverUrl);
+                }
+            }
+        }
+
+        public static string GetServerUrl(string server_id)
         {
             return serverUrlMapping[server_id];
         }

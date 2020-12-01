@@ -1,6 +1,8 @@
 ﻿using Grpc.Core;
 using Shared.GrpcDataStore;
+using Shared.Util;
 using System;
+using System.Collections.Generic;
 
 namespace DataStoreServer
 {
@@ -58,6 +60,16 @@ namespace DataStoreServer
             StartProgram(args);
             Console.ReadKey();
             //server.ShutdownAsync().Wait();
+        }
+
+        public void UpdatePartitionsContext(Dictionary<string, string> partitionToReplicationFactorMapping, Dictionary<string, string[]> partitionMapping)
+        {
+            PartitionMapping.CreatePartitionMapping(partitionToReplicationFactorMapping, partitionMapping);
+        }
+
+        public void UpdateServersContext(Dictionary<string, string> serverUrlMapping)
+        {
+            ServerUrlMapping.CreateServerUrlMapping(serverUrlMapping);
         }
 
         public void GetStatus() 

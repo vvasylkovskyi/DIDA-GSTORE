@@ -55,8 +55,6 @@ namespace Shared.Util
             }
             partitionMapping.Add(partitionName, serverIds);
             Console.WriteLine(">>> New partition created with success");
-            getPartitionMaster(partitionName);
-
         }
 
         public static string getPartitionMaster(string partitionName)

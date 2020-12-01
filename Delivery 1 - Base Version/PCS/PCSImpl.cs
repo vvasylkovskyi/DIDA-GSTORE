@@ -52,6 +52,10 @@ namespace PCS
             return await Task.FromResult(CreatePartitionHandler(request));
         }
 
+        public async override Task<UpdateServersReply> UpdateServers(UpdateServersRequest request, ServerCallContext context)
+        {
+            return await Task.FromResult(UpdateServersHandler(request));
+        }
         // -------- Handlers ---------
 
         public StartServerReply StartServerHandler(StartServerRequest request)
@@ -95,7 +99,7 @@ namespace PCS
         public UpdateReplicasNumberReply UpdateReplicasNumberHandler(UpdateReplicasNumberRequest request)
         {
             processCreationService.UpdateReplicationFactor(request.ReplicationFactor);
-            return new UpdateReplicasNumberReply { UpdateReplicasNumber = PartitionMapping.starting_replication_factor };
+            return new UpdateReplicasNumberReply { UpdateReplicasNumber = "1" };
         }
 
         public CreatePartitionReply CreatePartitionHandler(CreatePartitionRequest request)
@@ -112,5 +116,10 @@ namespace PCS
             return new CreatePartitionReply { CreateParititon = "1" };
         }
 
+        public UpdateServersReply UpdateServersHandler(UpdateServersRequest request)
+        {
+            processCreationService.UpdateServers(request.ServerId, request.ServerUrl);
+            return new UpdateServersReply { UpdateServers = "1" };
+        }
     }
 }

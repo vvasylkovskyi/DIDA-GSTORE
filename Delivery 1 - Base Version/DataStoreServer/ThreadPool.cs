@@ -13,6 +13,7 @@ namespace DataStoreServer
 	{
 		private CircularBuffer<ThrWork> buf;
 		private Thread[] pool;
+
 		public ThrPool(int thrNum, int bufSize)
 		{
 			buf = new CircularBuffer<ThrWork>(bufSize);

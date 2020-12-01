@@ -28,8 +28,6 @@ namespace DataStoreServer
             return Task.FromResult(new lockReply());
         }
 
-
-
         public override Task<NewValueReplay> WriteNewValue(NewValueRequest request, ServerCallContext context)
         {
             Partition partion = server.getPartition(current_key.partition_id);

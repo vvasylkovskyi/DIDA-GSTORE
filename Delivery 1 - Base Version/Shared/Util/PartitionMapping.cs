@@ -19,7 +19,7 @@ namespace Shared.Util
         public static Dictionary<string, string> partitionToReplicationFactorMapping = new Dictionary<string, string>();
         public static string starting_replication_factor;
 
-        public static void UpdateReplcationFactor(string replicationFactor)
+        public static void UpdateReplicationFactor(string replicationFactor)
         {
             starting_replication_factor = replicationFactor;
 

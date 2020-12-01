@@ -134,7 +134,7 @@ namespace PCS
 
         public void UpdateReplicationFactor(string replicationFactor)
         {
-            PartitionMapping.UpdateReplcationFactor(replicationFactor);
+            PartitionMapping.UpdateReplicationFactor(replicationFactor);
         }
 
         public void CreatePartition(string replicationFactor, string partitionName, string[] serverIds)

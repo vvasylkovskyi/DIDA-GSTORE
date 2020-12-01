@@ -43,16 +43,14 @@ namespace PCS
 
         public void InitPCSServer(int port)
         {
+            Server server = new Server
+            {
+                Services = { PCSServices.BindService(new PCSImpl(this)) },
+                Ports = { new ServerPort("localhost", port, ServerCredentials.Insecure) }
+            };
+            server.Start();
 
-                Server server = new Server
-                {
-                    Services = { PCSServices.BindService(new PCSImpl(this)) },
-                    Ports = { new ServerPort("localhost", port, ServerCredentials.Insecure) }
-                };
-                server.Start();
-
-                Console.WriteLine(">>> PCS Server started");
-            
+            Console.WriteLine(">>> PCS Server started");   
         }
 
 
@@ -82,29 +80,29 @@ namespace PCS
             Console.WriteLine(">>> Starting Server...");
             DataStoreServer.Program server = new DataStoreServer.Program().StartServer(args);
             this.server = server;
+            pcsRole = "server";
 
             // When creating a new Server Program it has no context
             // These two functions will update the new server context with the partitions and server that PCS knows
             this.server.UpdateServersContext(ServerUrlMapping.serverUrlMapping);
             this.server.UpdatePartitionsContext(PartitionMapping.partitionToReplicationFactorMapping, PartitionMapping.partitionMapping);
-
-            pcsRole = "server";
         }
 
         public void StartClient(string[] args)
         {
             Console.WriteLine(">>> Starting Client...");
-            bool fromCMD = true;
-            DataStoreClient.Program client = new DataStoreClient.Program();
+            bool fromPCS = true;
+            DataStoreClient.Program client = new DataStoreClient.Program().StartClient(args, fromPCS);
             this.client = client;
-             
+            pcsRole = "client";
+
             // When creating a new Client Program it has no context
             // These two functions will update the new client context with the partitions and server that PCS knows
             this.client.UpdateServersContext(ServerUrlMapping.serverUrlMapping);
             this.client.UpdatePartitionsContext(PartitionMapping.partitionToReplicationFactorMapping, PartitionMapping.partitionMapping);
 
-            this.client.StartClient(args, fromCMD);
-            pcsRole = "client";
+            string scriptFile = args[2];
+            this.client.ReadScriptFile(scriptFile);
         }
 
         public void Crash()

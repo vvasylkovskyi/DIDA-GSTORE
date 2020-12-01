@@ -56,7 +56,6 @@ namespace PCS
         {
             return await Task.FromResult(UpdateServersHandler(request));
         }
-
         // -------- Handlers ---------
 
         public StartServerReply StartServerHandler(StartServerRequest request)

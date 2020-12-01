@@ -60,13 +60,16 @@ namespace DataStoreServer
             return null;
         }
 
+        public void createPartition(string partition_id)
+        {
+            Partition p = new Partition(partition_id);
+            partitions.Add(p);
+        }
+
         public string getID()
         {
             return server_id;
         }
-
-       
-
 
         public WriteReply getWriteResult(WriteRequest request)
         {

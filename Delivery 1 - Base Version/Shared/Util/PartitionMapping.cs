@@ -17,10 +17,13 @@ namespace Shared.Util
 
         public static Dictionary<string, string[]> partitionMapping = new Dictionary<string, string[]>();
         public static Dictionary<string, string> partitionToReplicationFactorMapping = new Dictionary<string, string>();
+        public static string starting_replication_factor;
 
         public static void UpdateReplcationFactor(string replicationFactor)
         {
-            foreach(string partitionName in partitionToReplicationFactorMapping.Keys)
+            starting_replication_factor = replicationFactor;
+
+            foreach (string partitionName in partitionToReplicationFactorMapping.Keys)
             {
                 partitionToReplicationFactorMapping[partitionName] = replicationFactor;
             }
@@ -41,7 +44,7 @@ namespace Shared.Util
 
         public static void CreatePartition(string replicationFactor, string partitionName, string[] serverIds)
         {
-            UpdateReplcationFactor(replicationFactor);
+            partitionToReplicationFactorMapping[partitionName] = replicationFactor;
 
             if (TryGetPartition(partitionName, out string[] existingServerIds))
             {
@@ -52,8 +55,6 @@ namespace Shared.Util
             }
             partitionMapping.Add(partitionName, serverIds);
             Console.WriteLine(">>> New partition created with success");
-            getPartitionMaster(partitionName);
-
         }
 
         public static string getPartitionMaster(string partitionName)

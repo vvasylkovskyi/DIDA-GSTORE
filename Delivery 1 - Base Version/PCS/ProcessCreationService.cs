@@ -142,17 +142,5 @@ namespace PCS
             this.server.GetServer().createPartition(partitionName);
         }
 
-        public void UpdateServers(string serverId, string serverUrl)
-        {
-            ServerUrlMapping.AddServerToServerUrlMapping(serverId, serverUrl);
-
-            if(pcsRole == "server")
-            {
-                server.UpdateServersContext(ServerUrlMapping.serverUrlMapping);
-            } else if(pcsRole == "client")
-            {
-                client.UpdateServersContext(ServerUrlMapping.serverUrlMapping);
-            }
-        }
     }
 }

@@ -36,8 +36,10 @@ namespace DataStoreServer
 		{
 			while (true)
 			{
+				// instantiate delegate
 				ThrWork tw = buf.Consume();
 				getPermission();
+				// call the delegate
 				tw();
 			}
 		}

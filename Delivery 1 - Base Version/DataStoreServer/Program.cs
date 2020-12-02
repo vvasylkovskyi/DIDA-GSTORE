@@ -92,15 +92,13 @@ namespace DataStoreServer
         public void Freeze() 
         {
             Console.WriteLine("I am going to freeze");
-            _isFrozen = true;
-            server.setFreeze(_isFrozen);
+            server.Freeze();
         }
 
         public void Unfreeze()
         {
             Console.WriteLine("I am going to unfreeze");
-            _isFrozen = false;
-            server.setFreeze(_isFrozen);
+            server.unFreeze();
         }
 
         public void SetServerId(string serverId) 
@@ -116,6 +114,16 @@ namespace DataStoreServer
         public ServerImp GetServer()
         {
             return server;
+        }
+
+        public void CreateLocalPartitions()
+        {
+            List<string> partitions = PartitionMapping.getPartitionsByServerID(serverId);
+            
+            foreach (string partition_id in partitions)
+            {
+                server.createPartition(partition_id);
+            }
         }
     }
 }

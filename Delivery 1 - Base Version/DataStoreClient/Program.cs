@@ -51,7 +51,9 @@ namespace DataStoreClient
             // allow http traffic in grpc
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             Console.WriteLine("I'm ready to work");
-            Console.WriteLine("clientID= " + username + "; url= " + clientUrl);
+
+            if (debug_console)
+                Console.WriteLine("clientID= " + username + "; url= " + clientUrl);
         }
 
         public void Init(string[] args)

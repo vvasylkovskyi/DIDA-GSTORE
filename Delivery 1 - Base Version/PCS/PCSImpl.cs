@@ -113,7 +113,7 @@ namespace PCS
                     .ToArray();
 
             processCreationService.CreatePartition(replicationFactor, partitionName, serverIds);
-            return new CreatePartitionReply { CreateParititon = "1" };
+            return new CreatePartitionReply { CreatePartititon = "1" };
         }
 
         public UpdateServersReply UpdateServersHandler(UpdateServersRequest request)

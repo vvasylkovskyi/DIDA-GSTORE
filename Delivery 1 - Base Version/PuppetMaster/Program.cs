@@ -83,10 +83,11 @@ namespace PuppetMaster
         private void ReadScriptFile()
         {
             string command;
-            Console.WriteLine(">>> Please Write file pathname: ");
+            Console.WriteLine(">>> Please Write file name: ");
             StreamReader file;
 
-            string filePath = Console.ReadLine();
+            string fileName = Console.ReadLine();
+            string filePath = "../scripts/" + fileName;
             try
             {
                 file = new StreamReader(filePath);
@@ -182,11 +183,11 @@ namespace PuppetMaster
                     break;
                 case "Freeze":
                     string freezeServerId = commandsList[1];
-                    FreezServer(freezeServerId);
+                    FreezeServer(freezeServerId);
                     break;
                 case "Unfreeze":
                     string unfreezeServerId = commandsList[1];
-                    UnfreezServer(unfreezeServerId);
+                    UnfreezeServer(unfreezeServerId);
                     break;
                 case "Wait":
                     string timeMs = commandsList[1];
@@ -213,7 +214,7 @@ namespace PuppetMaster
             string argsString = Utilities.BuildArgumentsString(args);
             foreach (PCSServices.PCSServicesClient gRPCpuppetMasterToPCSconnetion in ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values) {
                 CreatePartitionReply createPartitionReply = gRPCpuppetMasterToPCSconnetion.CreatePartition(new CreatePartitionRequest { Args = argsString });
-                Console.WriteLine(">>> Create Partition response from PCS: " + createPartitionReply.CreateParititon);
+                Console.WriteLine(">>> Create Partition response from PCS: " + createPartitionReply.CreatePartititon);
             };
         }
 
@@ -227,7 +228,7 @@ namespace PuppetMaster
             };
         }
 
-        private void UnfreezServer(string serverId)
+        private void UnfreezeServer(string serverId)
         {
             Console.WriteLine("Unfreezing Server: " + serverId);
 
@@ -241,7 +242,7 @@ namespace PuppetMaster
             Console.WriteLine(unfreezeReply.Unfreeze);
         }
 
-        private void FreezServer(string serverId)
+        private void FreezeServer(string serverId)
         {
             Console.WriteLine("Freezing Server: " + serverId);
 

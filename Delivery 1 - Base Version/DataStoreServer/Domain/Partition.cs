@@ -11,6 +11,7 @@ namespace DataStoreServer.Domain
     {
         private string id;
         private DataStore data;
+        private bool connected_to_replicas = false;
 
         private Dictionary<string, GrpcChannel> replica_channels;
         private Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> replica_clients;
@@ -21,7 +22,6 @@ namespace DataStoreServer.Domain
             this.data = new DataStore();
             this.replica_channels = new Dictionary<string, GrpcChannel>();
             this.replica_clients = new Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient>();
-            updateConnectionToReplicas(id);
         }
 
         public string getName()
@@ -31,15 +31,16 @@ namespace DataStoreServer.Domain
 
         private void updateConnectionToReplicas(string partition_id)
         {
-            string[] replicas = PartitionMapping.getPartitionNodes(partition_id);
+            string[] replicas = PartitionMapping.getPartitionReplicas(partition_id);
 
             foreach (string replica in replicas)
             {
                 GrpcChannel channel;
 
-                channel = replica_channels[replica];
-                if (channel != null)
+                if (replica_channels.TryGetValue(replica, out channel))
+                {
                     channel.ShutdownAsync();
+                }
 
                 string url = ServerUrlMapping.GetServerUrl(replica);
                 channel = GrpcChannel.ForAddress(url);
@@ -50,6 +51,12 @@ namespace DataStoreServer.Domain
 
         public Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> getReplicas()
         {
+            if (!connected_to_replicas)
+            {
+                updateConnectionToReplicas(id);
+                connected_to_replicas = true;
+            }
+
             return replica_clients;
         }
 

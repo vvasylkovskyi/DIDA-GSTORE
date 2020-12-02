@@ -44,6 +44,8 @@ namespace Shared.Util
 
         public static void CreatePartition(string replicationFactor, string partitionName, string[] serverIds)
         {
+            serverIds = serverIds.Where(o => o.Length > 0).ToArray();
+
             partitionToReplicationFactorMapping[partitionName] = replicationFactor;
 
             if (TryGetPartition(partitionName, out string[] existingServerIds))
@@ -59,12 +61,14 @@ namespace Shared.Util
 
         public static string getPartitionMaster(string partitionName)
         {
+            Dictionary<string, string[]> d = partitionMapping;
+
             return partitionMapping[partitionName][0];
         }
 
-        public static string[] getPartitionNodes(string partitionName)
+        public static string[] getPartitionReplicas(string partitionName)
         {
-            return partitionMapping[partitionName];
+            return partitionMapping[partitionName].Skip(1).ToArray();
         }
 
         public static void UpdatePartition(string partitionName, string crashedServerId)
@@ -83,6 +87,20 @@ namespace Shared.Util
                     partitionMapping.Remove(partitionName);
                 }
             }
+        }
+
+        public static List<string> getPartitionsByServerID(string serverId)
+        {
+            // list of partitions that use the server with serverID
+            List<string> result = new List<string>();
+
+            foreach (string partition_id in partitionMapping.Keys)
+            {
+                if (partitionMapping[partition_id].Contains(serverId))
+                    result.Add(partition_id);
+            }
+
+            return result;
         }
     }
 }

@@ -35,10 +35,15 @@ namespace PCS
                 Console.WriteLine(">>> Error: Something went wrong");
             }
 
+            /*
             while(true)
             {
                 
             }
+            */
+
+            // this is much more efficient
+            Console.ReadKey();
         }
 
         public void InitPCSServer(int port)
@@ -86,6 +91,9 @@ namespace PCS
             // These two functions will update the new server context with the partitions and server that PCS knows
             this.server.UpdateServersContext(ServerUrlMapping.serverUrlMapping);
             this.server.UpdatePartitionsContext(PartitionMapping.partitionToReplicationFactorMapping, PartitionMapping.partitionMapping);
+
+            // after updating partition information, create local partitions to store data
+            this.server.CreateLocalPartitions();
         }
 
         public void StartClient(string[] args)

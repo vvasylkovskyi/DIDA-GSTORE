@@ -30,7 +30,7 @@ message CreatePartitionRequest {
 }
 
 message CreatePartitionReply {
-	string createParititon = 1;
+	string createPartititon = 1;
 }
 
 message UpdateReplicasNumberRequest {

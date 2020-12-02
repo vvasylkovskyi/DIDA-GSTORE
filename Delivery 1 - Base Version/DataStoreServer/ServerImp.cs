@@ -44,10 +44,17 @@ namespace DataStoreServer
             server.Start();
         }
 
-        public void setFreeze(Boolean f) {
-            this._isFrozen = f;
+        public void Freeze() {
+            this._isFrozen = true;
             tpool.setFreeze(_isFrozen);
         }
+
+        public void unFreeze()
+        {
+            this._isFrozen = false;
+            tpool.setFreeze(_isFrozen);
+        }
+
         public Partition getPartition(string partition_id)
         {
             foreach (Partition p in partitions)

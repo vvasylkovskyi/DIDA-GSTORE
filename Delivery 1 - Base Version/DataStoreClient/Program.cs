@@ -11,7 +11,7 @@ namespace DataStoreClient
 {
     public class Program
     {
-        private bool debug_console = true;
+        private bool debug_console = false;
 
         private GrpcChannel channel;
         private DataStoreService.DataStoreServiceClient client;

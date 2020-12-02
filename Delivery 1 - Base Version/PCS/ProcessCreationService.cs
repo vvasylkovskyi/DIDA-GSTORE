@@ -35,15 +35,22 @@ namespace PCS
                 Console.WriteLine(">>> Error: Something went wrong");
             }
 
-            /*
-            while(true)
+            Console.WriteLine(">>> Press 'q' to exit");
+            while (true)
             {
-                
+                if (client == null)
+                    waitingLoop();
+                else
+                    client.readCommandsLoop();
             }
-            */
+        }
 
-            // this is much more efficient
-            Console.ReadKey();
+        public void waitingLoop()
+        {
+            if (Console.ReadLine().Equals("q"))
+            {
+                Environment.Exit(1);
+            }
         }
 
         public void InitPCSServer(int port)
@@ -57,7 +64,6 @@ namespace PCS
 
             Console.WriteLine(">>> PCS Server started");   
         }
-
 
         public static void NotifyPuppetMaster(string port)
         {
@@ -99,8 +105,7 @@ namespace PCS
         public void StartClient(string[] args)
         {
             Console.WriteLine(">>> Starting Client...");
-            bool fromPCS = true;
-            DataStoreClient.Program client = new DataStoreClient.Program().StartClient(args, fromPCS);
+            DataStoreClient.Program client = DataStoreClient.Program.StartClientWithPCS(args);
             this.client = client;
             pcsRole = "client";
 
@@ -111,6 +116,7 @@ namespace PCS
 
             string scriptFile = args[2];
             this.client.ReadScriptFile(scriptFile);
+            Console.WriteLine(">>> Finished executing script file");
         }
 
         public void Crash()

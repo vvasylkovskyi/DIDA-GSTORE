@@ -71,6 +71,11 @@ namespace Shared.Util
             return partitionMapping[partitionName].Skip(1).ToArray();
         }
 
+        public static string[] getPartitionAllNodes(string partitionName)
+        {
+            return partitionMapping[partitionName].ToArray();
+        }
+
         public static void UpdatePartition(string partitionName, string crashedServerId)
         {
             if(TryGetPartition(partitionName, out string[] currentServerIds))

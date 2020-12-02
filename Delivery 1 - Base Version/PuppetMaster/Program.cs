@@ -99,7 +99,8 @@ namespace PuppetMaster
             {
                 file = new StreamReader(filePath);
             }
-            catch (DirectoryNotFoundException)
+            // DirectoryNotFoundException or FileNotFoundException
+            catch (Exception)
             {
                 Console.WriteLine(">>> Exception. File Not Found. Please Try again");
                 return;
@@ -114,7 +115,7 @@ namespace PuppetMaster
         {
             while (true)
             {
-                Console.WriteLine(">>> Please Write a command");
+                Console.WriteLine(">>> Please Write a command (use 'help' to get a list of available commands)");
                 string command = Console.ReadLine();
                 ProcessCommand(command);
             }
@@ -200,6 +201,13 @@ namespace PuppetMaster
                     string timeMs = commandsList[1];
                     Console.WriteLine(">>> Waiting...");
                     Thread.Sleep(int.Parse(timeMs));
+                    break;
+                case "help":
+                    showHelp();
+                    break;
+                default:
+                    Console.WriteLine("This is an invalid command:" + mainCommand);
+                    // showHelp();
                     break;
             }
         }
@@ -338,6 +346,41 @@ namespace PuppetMaster
             Console.WriteLine("Invoking Start Client...");
             StartClientReply startClientReply = pcs.StartClient(new StartClientRequest { Args = argsString });
             Console.WriteLine(startClientReply.StartClient);
+        }
+
+        private void showHelp()
+        {
+            Dictionary<string, string[]> commands = new Dictionary<string, string[]>()
+            {
+                {"ReplicationFactor", new string[]{"r_factor"} },
+                {"Partition", new string[]{"r_factor", "partition_id", "server_id_1", "...", "server_id_n"} },
+                {"Server", new string[]{"server_id", "url", "min_delay", "max_delay" } },
+                {"Client", new string[]{"username", "url", "script_file"} },
+                {"Status", new string[]{} },
+                {"Crash", new string[]{"server_id" } },
+                {"Freeze", new string[]{"server_id" } },
+                {"Unfreeze", new string[]{"server_id" } },
+                {"Wait", new string[]{"x_miliseconds"} }
+            };
+
+            Console.WriteLine("Available commands are:");
+
+            foreach (var command in commands)
+            {
+                Console.Write("  {0}", command.Key);
+
+                for (int i = command.Key.Length; i < 15; i++)
+                {
+                    Console.Write(" ");
+                }
+
+                foreach (var arg in command.Value)
+                {
+                    Console.Write("<{0}> ", arg);
+                }
+
+                Console.Write("\n");
+            }
         }
 
         #endregion

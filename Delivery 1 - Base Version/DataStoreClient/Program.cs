@@ -11,7 +11,7 @@ namespace DataStoreClient
 {
     public class Program
     {
-        private bool debug_console = false;
+        private bool debug_console = true;
 
         private GrpcChannel channel;
         private DataStoreService.DataStoreServiceClient client;
@@ -21,29 +21,42 @@ namespace DataStoreClient
         private bool repeat_block_active = false;
         private int repeat_block_total_cycles = 0;
 
-
         static void Main(string[] args)
         {
-            new Program().Init(args);
+            StartClientManually(args);
         }
 
-        public Program()
+        public Program(string[] args, bool fromPCS)
         {
-        }
+            string username = args[0];
+            string clientUrl = args[1];
+            startProgram(username, clientUrl);
 
-        public Program(string[] args, bool fromCMD)
-        {
-            if (fromCMD)
-            {
-                string username = args[0];
-                string clientUrl = args[1];
-                startProgram(username, clientUrl);
+            Console.WriteLine(">>> Started client process");
+
+            if (!fromPCS) {
+                readCommandsLoop();
             }
         }
 
-        public Program StartClient(string[] args, bool fromCMD)
+        public static Program StartClientWithPCS(string[] args)
         {
-            return new Program(args, fromCMD);
+            return new Program(args, true);
+        }
+
+        public static Program StartClientManually(string[] args)
+        {
+            return new Program(args, false);
+        }
+
+        public void readCommandsLoop()
+        {
+            Console.WriteLine(">>> Please write a command (use 'help' to get a list of available commands)");
+            while (true)
+            {
+                ReadCommandFromCommandLine(Console.ReadLine());
+                Console.WriteLine("\n>>> Please write a command");
+            }
         }
 
         private void startProgram(string username, string clientUrl)
@@ -54,21 +67,6 @@ namespace DataStoreClient
 
             if (debug_console)
                 Console.WriteLine("clientID= " + username + "; url= " + clientUrl);
-        }
-
-        public void Init(string[] args)
-        {
-            string username = args[0];
-            string clientUrl = args[1];
-            startProgram(username, clientUrl);
-
-            Console.WriteLine(">>> Started client process");
-            Console.WriteLine(">>> Please write a command (use 'help' to get a list of available commands)");
-            while (true)
-            {
-                ReadCommandFromCommandLine(Console.ReadLine());
-                Console.WriteLine("\n>>> Please write a command");
-            }
         }
 
         public void UpdatePartitionsContext(Dictionary<string, string> partitionToReplicationFactorMapping, Dictionary<string, string[]> partitionMapping)
@@ -84,7 +82,7 @@ namespace DataStoreClient
         public void ReadScriptFile(string fileName)
         {
             string command;
-            Console.WriteLine(">>> What is the File name: " + fileName);
+            Console.WriteLine(">>> The File name is: " + fileName);
             StreamReader file;
 
             // the result should be something like: C:\......\DIDA - GSTORE\Delivery 1 - Base Version\PCS\bin\Debug\netcoreapp3.1
@@ -99,7 +97,7 @@ namespace DataStoreClient
             {
                 file = new StreamReader(pathFromBaseProject);
             }
-            catch (DirectoryNotFoundException)
+            catch (Exception)
             {
                 Console.WriteLine("Exception. File Not Found. Please Try again");
                 return;
@@ -112,7 +110,7 @@ namespace DataStoreClient
 
         private void ReadCommandFromCommandLine(string commands)
         {
-            Console.WriteLine("Executing command...");
+            Console.WriteLine("\n>>> Executing command...");
             Console.WriteLine("======== " + commands);
             if (string.IsNullOrWhiteSpace(commands))
                 return;
@@ -198,7 +196,15 @@ namespace DataStoreClient
                     showHelp();
                     break;
 
+                case "script":
+                    ReadScriptFile(commandsList[1]);
+                    break;
+
                 case "exit":
+                    exitProgram();
+                    break;
+
+                case "q":
                     exitProgram();
                     break;
 
@@ -223,35 +229,89 @@ namespace DataStoreClient
 
             if (debug_console) Console.WriteLine("Reading from the server...");
 
-            // if the client is attached to a server
-            if (!string.IsNullOrEmpty(attached_server_id))
+            Console.WriteLine(">>> Read request...");
+
+            // if the client is attached to a server and that server contains the desired partition
+            List<string> available_partitions_in_server = PartitionMapping.getPartitionsByServerID(attached_server_id);
+            if (!string.IsNullOrEmpty(attached_server_id) && available_partitions_in_server.Contains(partition_id))
             {
                 if (debug_console) Console.WriteLine("Reading from the Attached Server: " + attached_server_id);
 
                 // read value from attached server
-                reply = client.Read(new ReadRequest { ObjectKey = object_key });
-
-                if (reply.ObjectExists)
+                try
                 {
-                    result = reply.Object.Val;
-                    got_result = true;
-                }
+                    reply = client.Read(new ReadRequest { ObjectKey = object_key });
+                    if (reply.ObjectExists)
+                    {
+                        result = reply.Object.Val;
+                        got_result = true;
+                    }
+                // server is crashed
+                } catch
+                {
+                    got_result = false;
+                }                
             }
 
             // if theres no result yet and there is a valid server_id parameter
             if ((!got_result) && (!server_id.Equals("-1")))
             {
-                // read value from alternative server
-                if (debug_console) Console.WriteLine("Attach to new Server: " + server_id);
-                reattachServer(server_id);
-                Console.WriteLine(">>> Read request...");
-                reply = client.Read(new ReadRequest { ObjectKey = object_key });
-                if (reply.ObjectExists)
+                // check if the server hint even has the partition
+                available_partitions_in_server = PartitionMapping.getPartitionsByServerID(server_id);
+                if (available_partitions_in_server.Contains(partition_id))
                 {
-                    result = reply.Object.Val;
-                    got_result = true;
+                    if (debug_console) Console.WriteLine("Attach to new Server: " + server_id);
+                    reattachServer(server_id);
+
+                    // read value from alternative server
+                    try
+                    {
+                        reply = client.Read(new ReadRequest { ObjectKey = object_key });
+                        if (reply.ObjectExists)
+                        {
+                            result = reply.Object.Val;
+                            got_result = true;
+                        }
+                        // server is crashed
+                    }
+                    catch
+                    {
+                        got_result = false;
+                    }
+                }
+                
+            }
+
+            // if theres no result yet, the client should find a server serving partition_id on its own
+            // it will try to connect to every single node in that partition
+            if (!got_result)
+            {
+                string[] partition_nodes = PartitionMapping.getPartitionAllNodes(partition_id);
+
+                foreach (string node_id in partition_nodes)
+                {
+                    if (debug_console) Console.WriteLine("Attach to new Server: " + node_id);
+                    reattachServer(node_id);
+
+                    // read value from one of the partition servers
+                    try
+                    {
+                        reply = client.Read(new ReadRequest { ObjectKey = object_key });
+                        if (reply.ObjectExists)
+                        {
+                            result = reply.Object.Val;
+                            got_result = true;
+                        }
+                    // server is crashed
+                    }
+                    catch
+                    {
+                        got_result = false;
+                    }
                 }
             }
+
+            if (got_result == false) result = "N/A";
             Console.WriteLine("Read Result: " + result);
         }
 
@@ -309,6 +369,7 @@ namespace DataStoreClient
             foreach(string server_id in ServerUrlMapping.serverUrlMapping.Keys)
             {
                 listServer(server_id);
+                Console.WriteLine("----------");
             }
         }
 
@@ -329,7 +390,9 @@ namespace DataStoreClient
                 {"begin-repeat", new string[]{"x_times"} },
                 {"end-repeat", new string[]{} },
                 {"help", new string[]{} },
-                {"exit", new string[]{} }
+                {"script", new string[]{"filename"} },
+                {"exit", new string[]{} },
+                {"q", new string[]{} }
             };
 
             Console.WriteLine("Available commands are:");
@@ -377,7 +440,7 @@ namespace DataStoreClient
         {
             repeat_block_active = false;
 
-            for (int curr_cycle = 0; curr_cycle < repeat_block_total_cycles; curr_cycle++)
+            for (int curr_cycle = 1; curr_cycle <= repeat_block_total_cycles; curr_cycle++)
             {
                 foreach (string command in commands_in_repeat_block)
                 {

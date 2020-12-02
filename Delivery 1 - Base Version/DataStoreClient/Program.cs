@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using Shared.Util;
 using System.Threading;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace DataStoreClient
 {
@@ -91,13 +92,18 @@ namespace DataStoreClient
             {
                 _filePath = Utilities.getParentDir(_filePath);
             }
-            // Linux and MAC
-            string pathFromBaseProject = _filePath + "/scripts/" + fileName;
-            // Windows
-            //string pathFromBaseProject = _filePath + "\\scripts\\" + fileName;
+
+            string path = "";
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                path = _filePath + "/scripts/" + fileName;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                path = _filePath + "\\scripts\\" + fileName;
+
             try
             {
-                file = new StreamReader(pathFromBaseProject);
+                file = new StreamReader(path);
             }
             catch (Exception)
             {

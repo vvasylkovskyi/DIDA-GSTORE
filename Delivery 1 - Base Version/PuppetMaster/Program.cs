@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -94,14 +95,17 @@ namespace PuppetMaster
             }
 
             string fileName = Console.ReadLine();
-            // Linux and MAC
-            string filePath = _filePath + "/scripts/" + fileName;
-            // Windows 
-            // string filePath = _filePath + "\\scripts\\" + fileName;
-            Console.WriteLine(filePath);
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                fileName = _filePath + "/scripts/" + fileName;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                fileName = _filePath + "\\scripts\\" + fileName;
+
+            Console.WriteLine("Trying to open file at location: " + fileName);
             try
             {
-                file = new StreamReader(filePath);
+                file = new StreamReader(fileName);
             }
             // DirectoryNotFoundException or FileNotFoundException
             catch (Exception)

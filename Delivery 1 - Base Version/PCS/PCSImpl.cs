@@ -62,44 +62,44 @@ namespace PCS
         {
             string[] args = Utilities.BuildArgsArrayFromArgsString(request.Args);
             processCreationService.StartServer(args);
-            return new StartServerReply { StartServer = "1" };
+            return new StartServerReply { StartServer = "OK" };
         }
 
         public StartClientReply StartClientHandler(StartClientRequest request)
         {
             string[] args = Utilities.BuildArgsArrayFromArgsString(request.Args);
             processCreationService.StartClient(args);
-            return new StartClientReply { StartClient = "1" };
+            return new StartClientReply { StartClient = "OK" };
         }
 
         public StatusReply GlobalStatusHandler()
         {
             processCreationService.GlobalStatus();
-            return new StatusReply { Status = "1" };
+            return new StatusReply { Status = "OK" };
         }
 
         public FreezeReply FreezeHandler()
         {
             processCreationService.Freeze();
-            return new FreezeReply { Freeze = "1" };
+            return new FreezeReply { Freeze = "OK" };
         }
 
         public UnfreezeReply UnfreezeHandler()
         {
             processCreationService.Unfreeze();
-            return new UnfreezeReply { Unfreeze = "1" };
+            return new UnfreezeReply { Unfreeze = "OK" };
         }
 
         public CrashReply CrashHandler()
         {
             processCreationService.Crash();
-            return new CrashReply { Crash = "1" };
+            return new CrashReply { Crash = "OK" };
         }
 
         public UpdateReplicasNumberReply UpdateReplicasNumberHandler(UpdateReplicasNumberRequest request)
         {
             processCreationService.UpdateReplicationFactor(request.ReplicationFactor);
-            return new UpdateReplicasNumberReply { UpdateReplicasNumber = "1" };
+            return new UpdateReplicasNumberReply { UpdateReplicasNumber = "OK" };
         }
 
         public CreatePartitionReply CreatePartitionHandler(CreatePartitionRequest request)
@@ -113,13 +113,13 @@ namespace PCS
                     .ToArray();
 
             processCreationService.CreatePartition(replicationFactor, partitionName, serverIds);
-            return new CreatePartitionReply { CreatePartititon = "1" };
+            return new CreatePartitionReply { CreatePartititon = "OK" };
         }
 
         public UpdateServersReply UpdateServersHandler(UpdateServersRequest request)
         {
             processCreationService.UpdateServers(request.ServerId, request.ServerUrl);
-            return new UpdateServersReply { UpdateServers = "1" };
+            return new UpdateServersReply { UpdateServers = "OK" };
         }
     }
 }

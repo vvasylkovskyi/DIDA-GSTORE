@@ -12,13 +12,15 @@ namespace DataStoreServer.Domain
         private string id;
         private DataStore data;
         private bool connected_to_replicas = false;
+        public bool is_master;
 
         private Dictionary<string, GrpcChannel> replica_channels;
         private Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> replica_clients;
 
-        public Partition(string id)
+        public Partition(string id, bool is_master)
         {
             this.id = id;
+            this.is_master = is_master;
             this.data = new DataStore();
             this.replica_channels = new Dictionary<string, GrpcChannel>();
             this.replica_clients = new Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient>();
@@ -71,6 +73,11 @@ namespace DataStoreServer.Domain
         public DataStoreValue getData(DataStoreKey key)
         {
             return data.getObject(key);
+        }
+
+        public DataStore getDataStore()
+        {
+            return data;
         }
 
         public bool dataExists(DataStoreKey key)

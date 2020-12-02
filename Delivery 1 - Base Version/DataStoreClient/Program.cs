@@ -84,17 +84,24 @@ namespace DataStoreClient
         public void ReadScriptFile(string fileName)
         {
             string command;
-            Console.WriteLine(">>> File name is: " + fileName);
+            Console.WriteLine(">>> What is the File name: " + fileName);
             StreamReader file;
 
-            string pathFromBaseProject = "../scripts/" + fileName;
+            // the result should be something like: C:\......\DIDA - GSTORE\Delivery 1 - Base Version\PCS\bin\Debug\netcoreapp3.1
+            string _filePath = Path.GetDirectoryName(System.AppDomain.CurrentDomain.BaseDirectory);
+            for (int i = 0; i < 4; i++)
+            {
+                _filePath = Utilities.getParentDir(_filePath);
+            }
+
+            string pathFromBaseProject = _filePath + "\\scripts\\" + fileName;
             try
             {
                 file = new StreamReader(pathFromBaseProject);
             }
             catch (DirectoryNotFoundException)
             {
-                Console.WriteLine(">>> Exception. File Not Found. Please Try again");
+                Console.WriteLine("Exception. File Not Found. Please Try again");
                 return;
             }
             while ((command = file.ReadLine()) != null)
@@ -105,7 +112,7 @@ namespace DataStoreClient
 
         private void ReadCommandFromCommandLine(string commands)
         {
-            Console.WriteLine(">>> Reading command: " + commands);
+            Console.WriteLine(">>> Executing command: " + commands);
             if (string.IsNullOrWhiteSpace(commands))
                 return;
             string[] commandsList = commands.Split(' ');
@@ -213,11 +220,11 @@ namespace DataStoreClient
                 ObjectId = object_id
             };
 
-            Console.WriteLine(">>> Reading from the server...");
+            Console.WriteLine("Reading from the server...");
             // if the client is attached to a server
             if (!string.IsNullOrEmpty(attached_server_id))
             {
-                Console.WriteLine(">>> Reading from the Attached Server: " + attached_server_id);
+                Console.WriteLine("Reading from the Attached Server: " + attached_server_id);
                 // read value from attached server
                 reply = client.Read(new ReadRequest { ObjectKey = object_key });
 
@@ -232,9 +239,9 @@ namespace DataStoreClient
             if ((!got_result) && (!server_id.Equals("-1")))
             {
                 // read value from alternative server
-                Console.WriteLine(">>> Attach to new Server: " + server_id);
+                Console.WriteLine("Attach to new Server: " + server_id);
                 reattachServer(server_id);
-                Console.WriteLine(">>> Read request...");
+                Console.WriteLine("Read request...");
                 reply = client.Read(new ReadRequest { ObjectKey = object_key });
                 if (reply.ObjectExists)
                 {
@@ -242,15 +249,15 @@ namespace DataStoreClient
                     got_result = true;
                 }
             }
-            Console.WriteLine(">>> Read Result: " + result);
+            Console.WriteLine("Read Result: " + result);
         }
 
         private void write(string partition_id, string object_id, string value)
         {
             WriteReply reply;
-            Console.WriteLine(">>> Get Partition Master from Partition Named: " + partition_id);
+            Console.WriteLine("Get Partition Master from Partition Named: " + partition_id);
             string partition_master_server_id = PartitionMapping.getPartitionMaster(partition_id);
-            Console.WriteLine(">>> Partition Master Server ID: " + partition_master_server_id);
+            Console.WriteLine("Partition Master Server ID: " + partition_master_server_id);
             reattachServer(partition_master_server_id);
 
             var object_key = new DataStoreKeyDto
@@ -264,7 +271,7 @@ namespace DataStoreClient
                 Val = value
             };
 
-            Console.WriteLine(">>> Write request...");
+            Console.WriteLine("Write request...");
             reply = client.Write(new WriteRequest { ObjectKey = object_key, Object = object_value });
         }
 
@@ -277,18 +284,19 @@ namespace DataStoreClient
 
             reply = client.ListServer(new ListServerRequest { Msg = "" });
 
-            Console.WriteLine("Displaying objects stored in server: " + server_id);
+            Console.WriteLine("> Start displaying objects stored in server: " + server_id);
 
             foreach (DataStorePartitionDto partition in reply.PartitionList)
             {
-                Console.WriteLine("Partition " + partition.PartitionId);
-                Console.WriteLine("The server is the master of this partition: " + (partition.PartitionMasterServerId.Equals(server_id)));
-
+                Console.WriteLine(">> Partition " + partition.PartitionId + ", is the server the master of this partition: " + partition.IsMaster);
                 foreach (DataStoreObjectDto store_object in partition.ObjectList)
                 {
                     Console.WriteLine(store_object);
                 }
+                Console.WriteLine(">> End of partition: " + partition.PartitionId);
             }
+
+            Console.WriteLine("> End of objects stored in server: " + server_id);
 
             reattachServer(previous_attached_server);
         }
@@ -384,9 +392,9 @@ namespace DataStoreClient
 
         private void attachServer(string server_id)
         {
-            Console.WriteLine(">>> Attaching to server with id: " + server_id);
+            Console.WriteLine("Attaching to server with id: " + server_id);
             string url = ServerUrlMapping.GetServerUrl(server_id);
-            Console.WriteLine(">>> Server URL is: " + url);
+            Console.WriteLine("Server URL is: " + url);
             channel = GrpcChannel.ForAddress(url);
             client = new DataStoreService.DataStoreServiceClient(channel);
             attached_server_id = server_id;
@@ -400,9 +408,8 @@ namespace DataStoreClient
 
         public void GetStatus()
         {
-            Console.WriteLine("Printing status...");
-            Console.WriteLine("I am client");
-            Console.WriteLine("My id: ");
+            Console.WriteLine(">>> Printing status...");
+            Console.WriteLine("Role: client, Attached server: " + attached_server_id);
         }
 
         private void exitProgram()

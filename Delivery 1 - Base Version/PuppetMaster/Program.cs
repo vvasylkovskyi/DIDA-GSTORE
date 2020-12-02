@@ -86,8 +86,15 @@ namespace PuppetMaster
             Console.WriteLine(">>> Please Write file name: ");
             StreamReader file;
 
+            // the result should be something like: C:\......\DIDA - GSTORE\Delivery 1 - Base Version\PCS\bin\Debug\netcoreapp3.1
+            string _filePath = Path.GetDirectoryName(System.AppDomain.CurrentDomain.BaseDirectory);
+            for (int i = 0; i < 4; i++)
+            {
+                _filePath = Utilities.getParentDir(_filePath);
+            }
+
             string fileName = Console.ReadLine();
-            string filePath = "../scripts/" + fileName;
+            string filePath = _filePath + "\\scripts\\" + fileName;
             try
             {
                 file = new StreamReader(filePath);
@@ -117,7 +124,7 @@ namespace PuppetMaster
         {
             if (string.IsNullOrWhiteSpace(commands))
                 return;
-            Console.WriteLine(">>> Executing command: " + commands);
+            Console.WriteLine("======== Executing command: " + commands);
             string[] commandsList = commands.Split(' ');
             string mainCommand = commandsList[0];
             switch (mainCommand)

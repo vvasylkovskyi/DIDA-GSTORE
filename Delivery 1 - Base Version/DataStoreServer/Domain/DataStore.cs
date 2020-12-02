@@ -22,6 +22,7 @@ namespace DataStoreServer.Domain
             }
             return null;
         }
+
         public DataStoreValue getObject(DataStoreKey key)
         {
             DataStoreKey keyCorrect = getCorrectKey(key);
@@ -58,7 +59,6 @@ namespace DataStoreServer.Domain
 
         }
 
-
         public bool objectExists(DataStoreKey key)
         {
             key = getCorrectKey(key);
@@ -66,7 +66,6 @@ namespace DataStoreServer.Domain
                 return true;
             return false;
         }
-
 
         public void SetLockObject(DataStoreKey key, bool objectLock)
         {
@@ -76,6 +75,11 @@ namespace DataStoreServer.Domain
                 key.isLocked = objectLock;
                 return;
             }
+        }
+
+        public List<DataStoreKey> getKeys()
+        {
+            return new List<DataStoreKey>(dataStore.Keys);
         }
     }
 

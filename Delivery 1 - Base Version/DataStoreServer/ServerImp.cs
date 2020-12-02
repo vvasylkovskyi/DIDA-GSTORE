@@ -15,7 +15,7 @@ namespace DataStoreServer
         private string server_id;
         private int min_delay;
         private int max_delay;
-        private ThrPool tpool = new ThrPool(1, 10);
+        internal ThrPool tpool = new ThrPool(1, 10);
         private Dictionary<WriteRequest, WriteReply> writeResults = new Dictionary<WriteRequest, WriteReply>();
         private string url;
         private bool _isFrozen = false;
@@ -26,7 +26,6 @@ namespace DataStoreServer
             this.min_delay = min_delay;
             this.max_delay = max_delay;
             this.url = url;
-
         }
 
         public void init_servers()
@@ -67,15 +66,28 @@ namespace DataStoreServer
             return null;
         }
 
+        public List<Partition> getPartitions()
+        {
+            return partitions;
+        }
+
+        public int getNumberOfPartitions()
+        {
+            return partitions.Count;
+        }
+
         public void createPartition(string partition_id)
         {
-            Partition p = new Partition(partition_id);
+            String master_id = PartitionMapping.getPartitionMaster(partition_id);
+            bool is_master = master_id.Equals(server_id);
+
+            Partition p = new Partition(partition_id, is_master);
             partitions.Add(p);
         }
 
         public string getID()
         {
-            return server_id;
+            return this.server_id;
         }
 
         public WriteReply getWriteResult(WriteRequest request)
@@ -99,37 +111,6 @@ namespace DataStoreServer
                 writeResults.Add(request, reply);
                 Monitor.PulseAll(writeResults);
             }
-        }
-
-        public WriteReply WriteHandler(WriteRequest request)
-        {
-            SendValueToReplica svr = new SendValueToReplica(this, request);
-            tpool.AssyncInvoke(new ThrWork(svr.doWork));
-            WriteReply reply = getWriteResult(request);
-            return reply;
-        }
-
-        public ReadReply ReadHandler(ReadRequest request) { 
-                  Partition partition = getPartition(request.ObjectKey.PartitionId);
-                  ReadReply reply = null;
-                  try
-                  {
-                      DataStoreValue value = partition.getData(new DataStoreKey(request.ObjectKey.PartitionId, request.ObjectKey.ObjectId));
-                      reply = new ReadReply
-                      {
-                          Object = new DataStoreValueDto { Val = value.val},
-                          ObjectExists = true
-                      };
-                  }
-                  catch (Exception) {
-                      reply = new ReadReply
-                      {
-                          Object = new DataStoreValueDto { Val = "NA" },
-                          ObjectExists = false
-                      };
-                  }
-
-                  return reply;
         }
     }
 }

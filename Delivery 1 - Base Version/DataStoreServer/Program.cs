@@ -78,26 +78,25 @@ namespace DataStoreServer
 
         public void GetStatus() 
         {
-            Console.WriteLine("Printing status...");
-            Console.WriteLine("I am server");
-            Console.WriteLine("My id: " + serverId);
+            Console.WriteLine(">>> Printing status...");
+            Console.WriteLine("Role: server, ID: " + serverId + ", Frozen: " + _isFrozen + ", Num of partitions: " + server.getNumberOfPartitions());
         }
 
         public void Crash() 
         {
-            Console.WriteLine("I am going to crash");
+            Console.WriteLine(">>> I am going to crash");
             Environment.Exit(1);
         }
 
         public void Freeze() 
         {
-            Console.WriteLine("I am going to freeze");
+            Console.WriteLine(">>> I am going to freeze");
             server.Freeze();
         }
 
         public void Unfreeze()
         {
-            Console.WriteLine("I am going to unfreeze");
+            Console.WriteLine(">>> I am going to unfreeze");
             server.unFreeze();
         }
 

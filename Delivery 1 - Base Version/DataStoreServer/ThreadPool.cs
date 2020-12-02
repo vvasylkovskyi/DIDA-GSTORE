@@ -5,11 +5,11 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 
-delegate void ThrWork();
+public delegate void ThrWork();
 
 namespace DataStoreServer
 {
-	class ThrPool
+	public class ThrPool
 	{
 		private CircularBuffer<ThrWork> buf;
 		private Thread[] pool;
@@ -29,7 +29,7 @@ namespace DataStoreServer
 		{
 			buf.Produce(action);
 
-			Console.WriteLine("Submitted action");
+			Console.WriteLine("Submitted action to thread pool");
 		}
 
 		public void consomeExec()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 
 namespace Shared.Util
@@ -44,5 +45,11 @@ namespace Shared.Util
             Random random = new Random();
             return random.Next(min, max);
         }
+
+        public static string getParentDir(string path)
+        {
+            return Directory.GetParent(path).FullName;
+        }
+        
     }
 }

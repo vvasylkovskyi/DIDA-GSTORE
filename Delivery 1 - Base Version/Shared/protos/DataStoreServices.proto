@@ -28,7 +28,7 @@ message DataStoreObjectDto {
 
 message DataStorePartitionDto {
 	string partition_id = 1;
-	string partition_master_server_id = 2;
+	bool is_master = 2;
 	repeated DataStoreObjectDto object_list = 3;
 }
 

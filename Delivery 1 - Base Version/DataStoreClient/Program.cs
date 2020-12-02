@@ -11,7 +11,7 @@ namespace DataStoreClient
 {
     public class Program
     {
-        private bool debug_console = true;
+        private bool debug_console = false;
 
         private GrpcChannel channel;
         private DataStoreService.DataStoreServiceClient client;
@@ -112,7 +112,8 @@ namespace DataStoreClient
 
         private void ReadCommandFromCommandLine(string commands)
         {
-            Console.WriteLine(">>> Executing command: " + commands);
+            Console.WriteLine("Executing command...");
+            Console.WriteLine("======== " + commands);
             if (string.IsNullOrWhiteSpace(commands))
                 return;
             string[] commandsList = commands.Split(' ');
@@ -220,11 +221,13 @@ namespace DataStoreClient
                 ObjectId = object_id
             };
 
-            Console.WriteLine("Reading from the server...");
+            if (debug_console) Console.WriteLine("Reading from the server...");
+
             // if the client is attached to a server
             if (!string.IsNullOrEmpty(attached_server_id))
             {
-                Console.WriteLine("Reading from the Attached Server: " + attached_server_id);
+                if (debug_console) Console.WriteLine("Reading from the Attached Server: " + attached_server_id);
+
                 // read value from attached server
                 reply = client.Read(new ReadRequest { ObjectKey = object_key });
 
@@ -239,9 +242,9 @@ namespace DataStoreClient
             if ((!got_result) && (!server_id.Equals("-1")))
             {
                 // read value from alternative server
-                Console.WriteLine("Attach to new Server: " + server_id);
+                if (debug_console) Console.WriteLine("Attach to new Server: " + server_id);
                 reattachServer(server_id);
-                Console.WriteLine("Read request...");
+                Console.WriteLine(">>> Read request...");
                 reply = client.Read(new ReadRequest { ObjectKey = object_key });
                 if (reply.ObjectExists)
                 {
@@ -255,9 +258,9 @@ namespace DataStoreClient
         private void write(string partition_id, string object_id, string value)
         {
             WriteReply reply;
-            Console.WriteLine("Get Partition Master from Partition Named: " + partition_id);
+            if (debug_console) Console.WriteLine("Get Partition Master from Partition Named: " + partition_id);
             string partition_master_server_id = PartitionMapping.getPartitionMaster(partition_id);
-            Console.WriteLine("Partition Master Server ID: " + partition_master_server_id);
+            if (debug_console) Console.WriteLine("Partition Master Server ID: " + partition_master_server_id);
             reattachServer(partition_master_server_id);
 
             var object_key = new DataStoreKeyDto
@@ -271,7 +274,7 @@ namespace DataStoreClient
                 Val = value
             };
 
-            Console.WriteLine("Write request...");
+            Console.WriteLine(">>> Write request...");
             reply = client.Write(new WriteRequest { ObjectKey = object_key, Object = object_value });
         }
 
@@ -372,6 +375,8 @@ namespace DataStoreClient
 
         private void executeRepeatBlock(List<string> command_list)
         {
+            repeat_block_active = false;
+
             for (int curr_cycle = 0; curr_cycle < repeat_block_total_cycles; curr_cycle++)
             {
                 foreach (string command in commands_in_repeat_block)
@@ -380,8 +385,6 @@ namespace DataStoreClient
                     ReadCommandFromCommandLine(replacedCommand);
                 }
             }
-
-            repeat_block_active = false;
         }
 
         private void deattachServer()
@@ -392,9 +395,9 @@ namespace DataStoreClient
 
         private void attachServer(string server_id)
         {
-            Console.WriteLine("Attaching to server with id: " + server_id);
+            if (debug_console) Console.WriteLine("Attaching to server with id: " + server_id);
             string url = ServerUrlMapping.GetServerUrl(server_id);
-            Console.WriteLine("Server URL is: " + url);
+            if (debug_console) Console.WriteLine("Server URL is: " + url);
             channel = GrpcChannel.ForAddress(url);
             client = new DataStoreService.DataStoreServiceClient(channel);
             attached_server_id = server_id;

@@ -1,4 +1,5 @@
 ﻿using DataStoreServer.Domain;
+using DataStoreServer.Util;
 using Shared.GrpcDataStore;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,8 @@ namespace DataStoreServer
             Partition partition = server.getPartition(request.ObjectKey.PartitionId);
             Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> PartitionReplicas = partition.getReplicas();
             lockReplicas(PartitionReplicas, this.request.ObjectKey);
-            WriteReply reply = write_new_value(PartitionReplicas, request);
+            write_new_value_locally(partition, request);
+            WriteReply reply = write_new_value_replicas(PartitionReplicas, request);
             server.setWriteResult(request,reply);
         }
 
@@ -45,7 +47,14 @@ namespace DataStoreServer
             }
         }
 
-        public WriteReply write_new_value(Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> replicas, WriteRequest request)
+        public void write_new_value_locally(Partition partition, WriteRequest request)
+        {
+            DataStoreKey key = Utilities.ConvertKeyDtoToDomain(request.ObjectKey);
+            DataStoreValue value = Utilities.ConvertValueDtoToDomain(request.Object);
+            partition.addNewOrUpdateExisting(key, value);
+        }
+
+        public WriteReply write_new_value_replicas(Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> replicas, WriteRequest request)
         {
             foreach (string replica_id in replicas.Keys)
             {

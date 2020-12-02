@@ -30,11 +30,11 @@ namespace DataStoreServer
 
         public override Task<NewValueReplay> WriteNewValue(NewValueRequest request, ServerCallContext context)
         {
-            Partition partion = server.getPartition(current_key.partition_id);
+            Partition partition = server.getPartition(current_key.partition_id);
             DataStoreValue value = new DataStoreValue();
             value.val = request.Val;
-            partion.addNewOrUpdateExisting(current_key, value);
-            partion.lockObject(current_key, false);
+            partition.addNewOrUpdateExisting(current_key, value);
+            partition.lockObject(current_key, false);
             return Task.FromResult(new NewValueReplay
             {
                 Ok = true

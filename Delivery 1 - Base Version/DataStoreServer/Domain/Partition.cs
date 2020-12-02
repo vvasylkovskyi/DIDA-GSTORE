@@ -68,7 +68,6 @@ namespace DataStoreServer.Domain
             }
         }
 
-
         public DataStoreValue getData(DataStoreKey key)
         {
             return data.getObject(key);

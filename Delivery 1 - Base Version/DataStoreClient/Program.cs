@@ -91,8 +91,10 @@ namespace DataStoreClient
             {
                 _filePath = Utilities.getParentDir(_filePath);
             }
-
-            string pathFromBaseProject = _filePath + "\\scripts\\" + fileName;
+            // Linux and MAC
+            string pathFromBaseProject = _filePath + "/scripts/" + fileName;
+            // Windows
+            //string pathFromBaseProject = _filePath + "\\scripts\\" + fileName;
             try
             {
                 file = new StreamReader(pathFromBaseProject);

@@ -94,7 +94,11 @@ namespace PuppetMaster
             }
 
             string fileName = Console.ReadLine();
-            string filePath = _filePath + "\\scripts\\" + fileName;
+            // Linux and MAC
+            string filePath = _filePath + "/scripts/" + fileName;
+            // Windows 
+            // string filePath = _filePath + "\\scripts\\" + fileName;
+            Console.WriteLine(filePath);
             try
             {
                 file = new StreamReader(filePath);

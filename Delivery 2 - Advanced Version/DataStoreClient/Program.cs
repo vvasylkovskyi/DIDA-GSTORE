@@ -22,6 +22,8 @@ namespace DataStoreClient
         private bool repeat_block_active = false;
         private int repeat_block_total_cycles = 0;
 
+        private int retry_time = 1000;
+
         static void Main(string[] args)
         {
             StartClientManually(args);
@@ -70,9 +72,10 @@ namespace DataStoreClient
                 Console.WriteLine("clientID= " + username + "; url= " + clientUrl);
         }
 
-        public void UpdatePartitionsContext(Dictionary<string, string> partitionToReplicationFactorMapping, Dictionary<string, string[]> partitionMapping)
+        public void UpdatePartitionsContext(Dictionary<string, string> partitionToReplicationFactorMapping, Dictionary<string, string[]> partitionMapping,
+            Dictionary<string, int> partitionToClockMapping)
         {
-            PartitionMapping.CreatePartitionMapping(partitionToReplicationFactorMapping, partitionMapping);
+            PartitionMapping.CreatePartitionMapping(partitionToReplicationFactorMapping, partitionMapping, partitionToClockMapping);
         }
 
         public void UpdateServersContext(Dictionary<string, string> serverUrlMapping)
@@ -187,11 +190,59 @@ namespace DataStoreClient
             }
         }
 
+        // Change name to reflect boolean return
+        private bool CompareClock(string partition_id, int reply_clock, DataStoreKeyDto object_key)
+        {
+            // Do Clock related staff
+            int partition_highest_clock = PartitionMapping.partitionToClockMapping[partition_id];
+
+            Console.WriteLine(">>> PartitionClock=" + partition_highest_clock + ", ReplyClock=" + reply_clock);
+            if(reply_clock > partition_highest_clock)
+            {
+                Console.WriteLine(">>> ReplyClock > PartitionClock. Reply clock is acceptable. ");
+                PartitionMapping.UpdatePartitionClock(partition_id, reply_clock);
+                return true;
+            }
+            else if(reply_clock < partition_highest_clock)
+            {
+                Console.WriteLine(">>> ReplyClock < PartitionClock. Waiting " + retry_time.ToString() + "And trying again...");
+                wait(retry_time);
+                return TryReadValue(object_key, partition_id);
+            }
+
+            else if(reply_clock == partition_highest_clock)
+            {
+                Console.WriteLine(">>> PartitionClock == ReplyClock. Reply clock is acceptable. ");
+            }
+            return true;
+        }
+
+        private bool TryReadValue(DataStoreKeyDto object_key, string partition_id)
+        {
+            string result;
+            ReadReply reply;
+
+            try
+            {
+                reply = client.Read(new ReadRequest { ObjectKey = object_key });
+                if (reply.ObjectExists)
+                {
+                    result = reply.Object.Val;
+                    Console.WriteLine(">>> Read Result: " + result);
+                    return CompareClock(partition_id, reply.PartitionClock, object_key);
+                }
+                // server is crashed
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private void read(string partition_id, string object_id, string server_id)
         {
-            string result = "N/A";
             bool got_result = false;
-            ReadReply reply;
 
             var object_key = new DataStoreKeyDto
             {
@@ -210,19 +261,7 @@ namespace DataStoreClient
                 if (debug_console) Console.WriteLine("Reading from the Attached Server: " + attached_server_id);
 
                 // read value from attached server
-                try
-                {
-                    reply = client.Read(new ReadRequest { ObjectKey = object_key });
-                    if (reply.ObjectExists)
-                    {
-                        result = reply.Object.Val;
-                        got_result = true;
-                    }
-                // server is crashed
-                } catch
-                {
-                    got_result = false;
-                }                
+                got_result = TryReadValue(object_key, partition_id);
             }
 
             // if theres no result yet and there is a valid server_id parameter
@@ -236,21 +275,8 @@ namespace DataStoreClient
                     reattachServer(server_id);
 
                     // read value from alternative server
-                    try
-                    {
-                        reply = client.Read(new ReadRequest { ObjectKey = object_key });
-                        if (reply.ObjectExists)
-                        {
-                            result = reply.Object.Val;
-                            got_result = true;
-                        }
-                    // server is crashed
-                    } catch
-                    {
-                        got_result = false;
-                    }
+                    got_result = TryReadValue(object_key, partition_id);
                 }
-                
             }
 
             // if theres no result yet, the client should find a server serving partition_id on its own
@@ -265,24 +291,14 @@ namespace DataStoreClient
                     reattachServer(node_id);
 
                     // read value from one of the partition servers
-                    try
-                    {
-                        reply = client.Read(new ReadRequest { ObjectKey = object_key });
-                        if (reply.ObjectExists)
-                        {
-                            result = reply.Object.Val;
-                            got_result = true;
-                        }
-                    // server is crashed
-                    } catch
-                    {
-                        got_result = false;
-                    }
+                    got_result = TryReadValue(object_key, partition_id);
                 }
             }
 
-            if (got_result == false) result = "N/A";
-            Console.WriteLine("Read Result: " + result);
+            if (got_result == false)
+            {
+                Console.WriteLine("Read Result: N/A");
+            }
         }
 
         private void write(string partition_id, string object_id, string value)

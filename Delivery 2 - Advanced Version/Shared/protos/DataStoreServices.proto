@@ -42,6 +42,7 @@ message ReadRequest {
 message ReadReply {
 	DataStoreValueDto object = 1;
 	bool object_exists = 2;
+    int32 partitionClock = 3;
 }
 
 // Write

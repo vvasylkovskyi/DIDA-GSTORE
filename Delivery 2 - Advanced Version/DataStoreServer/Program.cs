@@ -66,9 +66,10 @@ namespace DataStoreServer
             //server.ShutdownAsync().Wait();
         }
 
-        public void UpdatePartitionsContext(Dictionary<string, string> partitionToReplicationFactorMapping, Dictionary<string, string[]> partitionMapping)
+        public void UpdatePartitionsContext(Dictionary<string, string> partitionToReplicationFactorMapping, Dictionary<string, string[]> partitionMapping,
+            Dictionary<string, int> partitionToClockMapping)
         {
-            PartitionMapping.CreatePartitionMapping(partitionToReplicationFactorMapping, partitionMapping);
+            PartitionMapping.CreatePartitionMapping(partitionToReplicationFactorMapping, partitionMapping, partitionToClockMapping);
         }
 
         public void UpdateServersContext(Dictionary<string, string> serverUrlMapping)

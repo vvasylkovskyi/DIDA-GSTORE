@@ -80,8 +80,9 @@ namespace DataStoreServer
         {
             String master_id = PartitionMapping.getPartitionMaster(partition_id);
             bool is_master = master_id.Equals(server_id);
+            int partition_clock = PartitionMapping.getPartitionClock(partition_id);
 
-            Partition p = new Partition(partition_id, is_master);
+            Partition p = new Partition(partition_id, is_master, partition_clock);
             partitions.Add(p);
         }
 

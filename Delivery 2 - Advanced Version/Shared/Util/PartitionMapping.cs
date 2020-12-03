@@ -17,6 +17,9 @@ namespace Shared.Util
 
         public static Dictionary<string, string[]> partitionMapping = new Dictionary<string, string[]>();
         public static Dictionary<string, string> partitionToReplicationFactorMapping = new Dictionary<string, string>();
+        public static Dictionary<string, int> partitionToClockMapping = new Dictionary<string, int>();
+
+
         public static string starting_replication_factor;
 
         public static void UpdateReplicationFactor(string replicationFactor)
@@ -31,15 +34,24 @@ namespace Shared.Util
             Console.WriteLine(">>> Replication Factor updated successfully");
         }
 
+        public static void UpdatePartitionClock(string partitionName, int partitionClock)
+        {
+            partitionToClockMapping[partitionName] = partitionClock;
+
+            Console.WriteLine(">>> Partition Clock updates sucessfully: Partition=" + partitionName + ", Clock=" + partitionClock);
+        }
+
         private static bool TryGetPartition(string partitionName, out string[] serverIds)
         {
             return partitionMapping.TryGetValue(partitionName, out serverIds);
         }
 
-        public static void CreatePartitionMapping(Dictionary<string, string> partitionToReplicationFactorMapping, Dictionary<string, string[]> partitionMapping)
+        public static void CreatePartitionMapping(Dictionary<string, string> partitionToReplicationFactorMapping, Dictionary<string, string[]> partitionMapping,
+            Dictionary<string, int> partitionToClockMapping)
         {
             PartitionMapping.partitionToReplicationFactorMapping = partitionToReplicationFactorMapping;
             PartitionMapping.partitionMapping = partitionMapping;
+            PartitionMapping.partitionToClockMapping = partitionToClockMapping;
         }
 
         public static void CreatePartition(string replicationFactor, string partitionName, string[] serverIds)
@@ -47,23 +59,30 @@ namespace Shared.Util
             serverIds = serverIds.Where(o => o.Length > 0).ToArray();
 
             partitionToReplicationFactorMapping[partitionName] = replicationFactor;
+            partitionToClockMapping[partitionName] = 1; // Clock starts with 1
 
             if (TryGetPartition(partitionName, out string[] existingServerIds))
             {
                 partitionMapping[partitionName] = serverIds;
 
                 Console.WriteLine(">>> Partition was updated with success");
+                Console.WriteLine(">>> New partition created with success! Servers List: " + string.Join(", ", serverIds));
+                Console.WriteLine(">>> PartitionName: " + partitionName + ", Replication Factor: " + replicationFactor + ", Logical Clock: 1");
                 return;
             }
             partitionMapping.Add(partitionName, serverIds);
-            Console.WriteLine(">>> New partition created with success");
+            Console.WriteLine(">>> New partition created with success! Servers List: " + string.Join(", ", serverIds));
+            Console.WriteLine(">>> PartitionName: " + partitionName + ", Replication Factor: " + replicationFactor + ", Logical Clock: 1");
         }
 
         public static string getPartitionMaster(string partitionName)
         {
-            Dictionary<string, string[]> d = partitionMapping;
-
             return partitionMapping[partitionName][0];
+        }
+
+        public static int getPartitionClock(string partitionName)
+        {
+            return partitionToClockMapping[partitionName];
         }
 
         public static string[] getPartitionReplicas(string partitionName)

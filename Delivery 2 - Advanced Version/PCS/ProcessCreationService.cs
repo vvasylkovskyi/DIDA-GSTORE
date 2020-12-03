@@ -96,7 +96,7 @@ namespace PCS
             // When creating a new Server Program it has no context
             // These two functions will update the new server context with the partitions and server that PCS knows
             this.server.UpdateServersContext(ServerUrlMapping.serverUrlMapping);
-            this.server.UpdatePartitionsContext(PartitionMapping.partitionToReplicationFactorMapping, PartitionMapping.partitionMapping);
+            this.server.UpdatePartitionsContext(PartitionMapping.partitionToReplicationFactorMapping, PartitionMapping.partitionMapping, PartitionMapping.partitionToClockMapping);
 
             // after updating partition information, create local partitions to store data
             this.server.CreateLocalPartitions();
@@ -112,7 +112,7 @@ namespace PCS
             // When creating a new Client Program it has no context
             // These two functions will update the new client context with the partitions and server that PCS knows
             this.client.UpdateServersContext(ServerUrlMapping.serverUrlMapping);
-            this.client.UpdatePartitionsContext(PartitionMapping.partitionToReplicationFactorMapping, PartitionMapping.partitionMapping);
+            this.client.UpdatePartitionsContext(PartitionMapping.partitionToReplicationFactorMapping, PartitionMapping.partitionMapping, PartitionMapping.partitionToClockMapping);
 
             string scriptFile = args[2];
             this.client.ReadScriptFile(scriptFile);

@@ -49,14 +49,18 @@ namespace DataStoreServer
         public ReadReply ReadHandler(ReadRequest request)
         {
             Partition partition = server.getPartition(request.ObjectKey.PartitionId);
-            ReadReply reply = null;
+            int partitionClock = partition.getClock();
+
+            Console.WriteLine(">>> PartitionName=" + request.ObjectKey.PartitionId + ", PartitionClock=" + partitionClock);
+            ReadReply reply;
             try
             {
                 DataStoreValue value = partition.getData(new DataStoreKey(request.ObjectKey.PartitionId, request.ObjectKey.ObjectId));
                 reply = new ReadReply
                 {
                     Object = new DataStoreValueDto { Val = value.val },
-                    ObjectExists = true
+                    ObjectExists = true,
+                    PartitionClock = partitionClock
                 };
             }
             catch (Exception)
@@ -64,7 +68,8 @@ namespace DataStoreServer
                 reply = new ReadReply
                 {
                     Object = new DataStoreValueDto { Val = "NA" },
-                    ObjectExists = false
+                    ObjectExists = false,
+                    PartitionClock = partitionClock
                 };
             }
 

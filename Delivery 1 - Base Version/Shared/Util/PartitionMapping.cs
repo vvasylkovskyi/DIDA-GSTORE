@@ -107,5 +107,15 @@ namespace Shared.Util
 
             return result;
         }
+
+        public static void removePartitionMaster(string partition_id)
+        {
+            string[] new_replicas = partitionMapping[partition_id].Skip(1).ToArray();
+            partitionMapping[partition_id] = new_replicas;
+
+            int new_repl_factor = Int32.Parse(partitionToReplicationFactorMapping[partition_id]);
+            new_repl_factor -= 1;
+            partitionToReplicationFactorMapping[partition_id] = new_repl_factor.ToString();
+        }
     }
 }

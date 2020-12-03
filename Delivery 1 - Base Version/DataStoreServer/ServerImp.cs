@@ -112,5 +112,10 @@ namespace DataStoreServer
                 Monitor.PulseAll(writeResults);
             }
         }
+
+        public void dealWithServerCrash(string partition_id, string server_id)
+        {
+            PartitionMapping.removePartitionMaster(partition_id);
+        }
     }
 }

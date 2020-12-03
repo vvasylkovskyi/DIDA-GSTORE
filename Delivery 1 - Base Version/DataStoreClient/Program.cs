@@ -80,42 +80,6 @@ namespace DataStoreClient
             ServerUrlMapping.CreateServerUrlMapping(serverUrlMapping);
         }
 
-        public void ReadScriptFile(string fileName)
-        {
-            string command;
-            Console.WriteLine(">>> The File name is: " + fileName);
-            StreamReader file;
-
-            // the result should be something like: C:\......\DIDA - GSTORE\Delivery 1 - Base Version\PCS\bin\Debug\netcoreapp3.1
-            string _filePath = Path.GetDirectoryName(System.AppDomain.CurrentDomain.BaseDirectory);
-            for (int i = 0; i < 4; i++)
-            {
-                _filePath = Utilities.getParentDir(_filePath);
-            }
-
-            string path = "";
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                path = _filePath + "/scripts/" + fileName;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                path = _filePath + "\\scripts\\" + fileName;
-
-            try
-            {
-                file = new StreamReader(path);
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Exception. File Not Found. Please Try again");
-                return;
-            }
-            while ((command = file.ReadLine()) != null)
-            {
-                ReadCommandFromCommandLine(command);
-            }
-        }
-
         private void ReadCommandFromCommandLine(string commands)
         {
             Console.WriteLine("\n>>> Executing command...");
@@ -280,9 +244,8 @@ namespace DataStoreClient
                             result = reply.Object.Val;
                             got_result = true;
                         }
-                        // server is crashed
-                    }
-                    catch
+                    // server is crashed
+                    } catch
                     {
                         got_result = false;
                     }
@@ -311,8 +274,7 @@ namespace DataStoreClient
                             got_result = true;
                         }
                     // server is crashed
-                    }
-                    catch
+                    } catch
                     {
                         got_result = false;
                     }
@@ -343,7 +305,19 @@ namespace DataStoreClient
             };
 
             Console.WriteLine(">>> Write request...");
-            reply = client.Write(new WriteRequest { ObjectKey = object_key, Object = object_value });
+
+            try
+            {
+                reply = client.Write(new WriteRequest { ObjectKey = object_key, Object = object_value });
+                Console.WriteLine("Write result: " + reply);
+            
+            }
+            // server is crashed
+            catch
+            {
+                return;
+                // electNewLeader(partition_id, attached_server_id);
+            }
         }
 
         private void listServer(string server_id)
@@ -384,6 +358,71 @@ namespace DataStoreClient
         private void wait(int duration)
         {
             Thread.Sleep(duration);
+        }
+
+        public void ReadScriptFile(string fileName)
+        {
+            string command;
+            Console.WriteLine(">>> The File name is: " + fileName);
+            StreamReader file;
+
+            // the result should be something like: C:\......\DIDA - GSTORE\Delivery 1 - Base Version\PCS\bin\Debug\netcoreapp3.1
+            string _filePath = Path.GetDirectoryName(System.AppDomain.CurrentDomain.BaseDirectory);
+            for (int i = 0; i < 4; i++)
+            {
+                _filePath = Utilities.getParentDir(_filePath);
+            }
+
+            string path = "";
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                path = _filePath + "/scripts/" + fileName;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                path = _filePath + "\\scripts\\" + fileName;
+
+            try
+            {
+                file = new StreamReader(path);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Exception. File Not Found. Please Try again");
+                return;
+            }
+            while ((command = file.ReadLine()) != null)
+            {
+                ReadCommandFromCommandLine(command);
+            }
+        }
+
+        // the client has detected that 'attached_server_id' has failed
+        // it will send a message to the second in line for the role of master
+        private void electNewLeader(string partition_id, string crashed_server)
+        {
+            NotifyCrashReply reply = null;
+            string previous_attached_server = attached_server_id;
+
+            string[] replicas = PartitionMapping.getPartitionReplicas(partition_id);
+
+            foreach (string replica in replicas)
+            {
+                reattachServer(replica);
+                if (debug_console) Console.WriteLine("Notifying a replica about a crash...");
+
+                try
+                {
+                    reply = client.NotifyCrash(new NotifyCrashRequest { CrashedMasterServerId = crashed_server, PartitionId = partition_id });
+                    break;
+                }
+                catch
+                {
+                    continue;
+                }
+                
+            }
+
+            reattachServer(previous_attached_server);
         }
 
         private void showHelp()

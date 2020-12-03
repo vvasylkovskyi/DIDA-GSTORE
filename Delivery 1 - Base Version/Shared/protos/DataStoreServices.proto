@@ -8,6 +8,7 @@ service DataStoreService {
 	rpc Read (ReadRequest) returns (ReadReply);
 	rpc Write (WriteRequest) returns (WriteReply);
 	rpc ListServer (ListServerRequest) returns (ListServerReply);
+	rpc NotifyCrash (NotifyCrashRequest) returns (NotifyCrashReply);
 }
 
 // Data Store DTO's corresponding to domain
@@ -54,7 +55,6 @@ message WriteReply {
 	int32 write_status = 1;
 }
 
-
 // ListServer
 
 message ListServerRequest {
@@ -65,3 +65,13 @@ message ListServerReply {
 	repeated DataStorePartitionDto partition_list = 1;
 }
 
+// NotifyCrash
+
+message NotifyCrashRequest {
+	string crashed_master_server_id = 1;
+	string partition_id = 2;
+}
+
+message NotifyCrashReply {
+	string status = 1;
+}

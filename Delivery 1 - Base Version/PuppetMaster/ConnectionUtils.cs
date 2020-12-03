@@ -73,25 +73,6 @@ namespace PuppetMaster
             pcsPortToServerOrClientIdDictionary.Add(clientOrServerId, port);
         }
 
-        // Example url : http://localhost:3000
-        public static bool AddGrpcConnection(string port)
-        {
-            string url = "http://localhost:" + port;
-            Console.WriteLine(">>> Initializing Grpc Connection for url: " + url);
-            try
-            {
-                GrpcChannel channel = GrpcChannel.ForAddress(url);
-                PCSServices.PCSServicesClient pcsClient = new PCSServices.PCSServicesClient(channel);
-                gRPCpuppetMasterToPCSconnetionsDictionary.Add(port, pcsClient);
-                return true;
-            }
-            catch (UriFormatException)
-            {
-                Console.WriteLine(">>> Exception. URI format is incorrect");
-                return false;
-            }
-        }
-
         public static bool EstablishPCSConnection(string port)
         {
             string url = "http://localhost:" + port;
@@ -101,6 +82,8 @@ namespace PuppetMaster
                 GrpcChannel channel = GrpcChannel.ForAddress(url);
                 PCSServices.PCSServicesClient pcsClient = new PCSServices.PCSServicesClient(channel);
                 gRPCpuppetMasterToPCSconnetionsDictionary.Add(port, pcsClient);
+
+                Console.WriteLine(">>> Connections: " + gRPCpuppetMasterToPCSconnetionsDictionary.Count);
                 return true;
             }
             catch (UriFormatException)

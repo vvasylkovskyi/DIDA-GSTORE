@@ -33,6 +33,11 @@ namespace DataStoreServer
             return await Task.FromResult(ListServerHandler(request));
         }
 
+        public override async Task<NotifyCrashReply> NotifyCrash(NotifyCrashRequest request, ServerCallContext context)
+        {
+            return await Task.FromResult(NotifyCrashHandler(request));
+        }
+
         public WriteReply WriteHandler(WriteRequest request)
         {
             SendValueToReplica svr = new SendValueToReplica(server, request);
@@ -102,6 +107,18 @@ namespace DataStoreServer
                 PartitionList = { partitionList }
             };
 
+            return reply;
+        }
+
+        public NotifyCrashReply NotifyCrashHandler(NotifyCrashRequest request)
+        {
+            NotifyCrashReply reply;
+            server.dealWithServerCrash(request.PartitionId, request.CrashedMasterServerId);
+
+            reply = new NotifyCrashReply
+            {
+                Status = "OK"
+            };
             return reply;
         }
 

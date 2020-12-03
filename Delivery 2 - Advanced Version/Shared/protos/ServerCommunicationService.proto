@@ -1,0 +1,30 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "Shared.GrpcDataStore";
+
+// ----------- Server Communicatiom Service -----------
+
+service ServerCommunicationService {
+  rpc LockObject (lockRequest) returns (lockReply);
+  rpc WriteNewValue (NewValueRequest) returns (NewValueReplay);
+}
+
+// lock request
+message lockRequest{
+	string partition_id = 1;
+	string object_id = 2;
+}
+
+message lockReply{
+	bool ok = 1;
+}
+
+// replica write request
+message NewValueRequest{
+	string val = 1;
+}
+
+message NewValueReplay{
+	bool ok =1;
+}
+

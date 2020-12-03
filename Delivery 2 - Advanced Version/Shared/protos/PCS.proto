@@ -1,0 +1,91 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "PCS";
+
+// ----------- PCS Service -----------
+
+service PCSServices {
+  rpc StartServer (StartServerRequest) returns (StartServerReply);
+  rpc StartClient (StartClientRequest) returns (StartClientReply);
+  rpc GlobalStatus (StatusRequest) returns (StatusReply);
+  rpc Freeze (FreezeRequest) returns (FreezeReply);
+  rpc Unfreeze (UnfreezeRequest) returns (UnfreezeReply);
+  rpc Crash (CrashRequest) returns (CrashReply);
+  rpc UpdateReplicasNumber (UpdateReplicasNumberRequest) returns (UpdateReplicasNumberReply);
+  rpc CreatePartition (CreatePartitionRequest) returns (CreatePartitionReply);
+  rpc UpdateServers (UpdateServersRequest) returns (UpdateServersReply);
+}
+
+message UpdateServersRequest {
+    string serverId = 1;
+	string serverUrl = 2;
+}
+
+message UpdateServersReply {
+	string updateServers = 1;
+}
+
+message CreatePartitionRequest {
+    string args = 1;
+}
+
+message CreatePartitionReply {
+	string createPartititon = 1;
+}
+
+message UpdateReplicasNumberRequest {
+	string replicationFactor = 1;
+}
+
+message UpdateReplicasNumberReply {
+	string updateReplicasNumber = 1;
+}
+
+message StartServerRequest {
+	string args = 1;
+}
+
+message StartServerReply {
+	string start_server = 1;
+}
+
+message StartClientRequest {
+	string args = 1;
+}
+
+message StartClientReply {
+	string start_client = 1;
+}
+
+message CrashRequest {
+	string server_id = 1;
+}
+
+message CrashReply {
+	string crash = 1;
+}
+
+message UnfreezeRequest {
+	string server_id = 1;
+}
+
+message UnfreezeReply {
+	string unfreeze = 1;
+}
+
+message FreezeRequest {
+	string server_id = 1;
+}
+
+message FreezeReply {
+	string freeze = 1;
+}
+
+message StatusRequest {
+	string localhost = 1;
+}
+
+message StatusReply {
+	string status = 1;
+}
+

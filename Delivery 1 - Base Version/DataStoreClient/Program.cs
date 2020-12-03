@@ -221,6 +221,7 @@ namespace DataStoreClient
                 // server is crashed
                 } catch
                 {
+                    handle_crashed_server(attached_server_id);
                     got_result = false;
                 }                
             }
@@ -247,6 +248,7 @@ namespace DataStoreClient
                     // server is crashed
                     } catch
                     {
+                        handle_crashed_server(attached_server_id);
                         got_result = false;
                     }
                 }
@@ -276,6 +278,7 @@ namespace DataStoreClient
                     // server is crashed
                     } catch
                     {
+                        handle_crashed_server(attached_server_id);
                         got_result = false;
                     }
                 }
@@ -310,38 +313,43 @@ namespace DataStoreClient
             {
                 reply = client.Write(new WriteRequest { ObjectKey = object_key, Object = object_value });
                 Console.WriteLine("Write result: " + reply);
-            
             }
-            // server is crashed
             catch
             {
+                handle_crashed_server(attached_server_id);
                 return;
-                // electNewLeader(partition_id, attached_server_id);
             }
         }
 
         private void listServer(string server_id)
         {
             ListServerReply reply;
-
             string previous_attached_server = attached_server_id;
-            reattachServer(server_id);
-
-            reply = client.ListServer(new ListServerRequest { Msg = "" });
-
-            Console.WriteLine("> Start displaying objects stored in server: " + server_id);
-
-            foreach (DataStorePartitionDto partition in reply.PartitionList)
+            
+            try
             {
-                Console.WriteLine(">> Partition " + partition.PartitionId + ", is the server the master of this partition: " + partition.IsMaster);
-                foreach (DataStoreObjectDto store_object in partition.ObjectList)
-                {
-                    Console.WriteLine(store_object);
-                }
-                Console.WriteLine(">> End of partition: " + partition.PartitionId);
-            }
+                reattachServer(server_id);
+                reply = client.ListServer(new ListServerRequest { Msg = "" });
 
-            Console.WriteLine("> End of objects stored in server: " + server_id);
+                Console.WriteLine("> Start displaying objects stored in server: " + server_id);
+
+                foreach (DataStorePartitionDto partition in reply.PartitionList)
+                {
+                    Console.WriteLine(">> Partition " + partition.PartitionId + ", is the server the master of this partition: " + partition.IsMaster);
+                    foreach (DataStoreObjectDto store_object in partition.ObjectList)
+                    {
+                        Console.WriteLine(store_object);
+                    }
+                    Console.WriteLine(">> End of partition: " + partition.PartitionId);
+                }
+
+                Console.WriteLine("> End of objects stored in server: " + server_id);
+            }
+            catch
+            {
+                handle_crashed_server(server_id);
+                return;
+            }
 
             reattachServer(previous_attached_server);
         }
@@ -353,6 +361,11 @@ namespace DataStoreClient
                 listServer(server_id);
                 Console.WriteLine("----------");
             }
+        }
+
+        private void handle_crashed_server(string server_id)
+        {
+            Console.WriteLine("The server is not responding. It seems to have crashed. ServerID: " + server_id);
         }
 
         private void wait(int duration)
@@ -394,35 +407,6 @@ namespace DataStoreClient
             {
                 ReadCommandFromCommandLine(command);
             }
-        }
-
-        // the client has detected that 'attached_server_id' has failed
-        // it will send a message to the second in line for the role of master
-        private void electNewLeader(string partition_id, string crashed_server)
-        {
-            NotifyCrashReply reply = null;
-            string previous_attached_server = attached_server_id;
-
-            string[] replicas = PartitionMapping.getPartitionReplicas(partition_id);
-
-            foreach (string replica in replicas)
-            {
-                reattachServer(replica);
-                if (debug_console) Console.WriteLine("Notifying a replica about a crash...");
-
-                try
-                {
-                    reply = client.NotifyCrash(new NotifyCrashRequest { CrashedMasterServerId = crashed_server, PartitionId = partition_id });
-                    break;
-                }
-                catch
-                {
-                    continue;
-                }
-                
-            }
-
-            reattachServer(previous_attached_server);
         }
 
         private void showHelp()

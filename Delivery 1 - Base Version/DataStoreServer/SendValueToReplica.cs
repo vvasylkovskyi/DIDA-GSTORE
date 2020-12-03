@@ -38,9 +38,9 @@ namespace DataStoreServer
                        ObjectId = key.ObjectId
                     });
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine("Replica cannot be reached: " + replica_id);
                     replicas.Remove(replica_id);
                 }
 
@@ -65,9 +65,9 @@ namespace DataStoreServer
                         Val = request.Object.Val
                     });
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine("Replica cannot be reached: " + replica_id);
                     replicas.Remove(replica_id);
                 }
             }

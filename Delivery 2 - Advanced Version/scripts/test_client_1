@@ -1,0 +1,5 @@
+write p1 o1 "p1-o1-v1"
+read p1 o1 -1
+read p2 o1 -1
+listServer s1
+wait 3000

@@ -1,0 +1,17 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "PuppetMaster.Protos";
+
+// ----------- PuppetMaster Service -----------
+
+service PuppetMasterServices {
+  rpc NotifyPuppetMaster (NotifyPuppetMasterRequest) returns (NotifyPuppetMasterReply);
+}
+
+message NotifyPuppetMasterRequest {
+	string port = 1;
+}
+
+message NotifyPuppetMasterReply {
+	string port = 1;
+}

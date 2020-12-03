@@ -1,0 +1,77 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "Shared.GrpcDataStore";
+
+// ----------- Data Store Service -----------
+
+service DataStoreService {
+	rpc Read (ReadRequest) returns (ReadReply);
+	rpc Write (WriteRequest) returns (WriteReply);
+	rpc ListServer (ListServerRequest) returns (ListServerReply);
+	rpc NotifyCrash (NotifyCrashRequest) returns (NotifyCrashReply);
+}
+
+// Data Store DTO's corresponding to domain
+
+message DataStoreKeyDto {
+	string partition_id = 1;
+	string object_id = 2;
+}
+
+message DataStoreValueDto {
+	string val = 1;
+}
+
+message DataStoreObjectDto {
+	DataStoreKeyDto key = 1;
+	DataStoreValueDto value = 2;
+}
+
+message DataStorePartitionDto {
+	string partition_id = 1;
+	bool is_master = 2;
+	repeated DataStoreObjectDto object_list = 3;
+}
+
+// Read
+
+message ReadRequest {
+	DataStoreKeyDto object_key = 1;
+}
+
+message ReadReply {
+	DataStoreValueDto object = 1;
+	bool object_exists = 2;
+}
+
+// Write
+
+message WriteRequest {
+	DataStoreKeyDto object_key = 1;
+	DataStoreValueDto object = 2;
+}
+
+message WriteReply {
+	int32 write_status = 1;
+}
+
+// ListServer
+
+message ListServerRequest {
+	string msg = 1;
+}
+
+message ListServerReply {
+	repeated DataStorePartitionDto partition_list = 1;
+}
+
+// NotifyCrash
+
+message NotifyCrashRequest {
+	string crashed_master_server_id = 1;
+	string partition_id = 2;
+}
+
+message NotifyCrashReply {
+	string status = 1;
+}

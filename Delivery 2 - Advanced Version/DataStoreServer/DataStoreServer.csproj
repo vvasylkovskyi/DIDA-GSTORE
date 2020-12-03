@@ -17,8 +17,14 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
 	<Protobuf Include="..\Shared\protos\DataStoreServices.proto" GrpcServices="Server" />
-	<Protobuf Include="..\Shared\protos\ServerCommunicationService.proto" GrpcServices="both" />
 	<PackageReference Include="Grpc.AspNetCore.Server" Version="2.23.2" />
+	<PackageReference Include="Grpc.Net.ClientFactory" Version="2.23.2" />
+	<Protobuf Include="ServerCommunicationService.proto" GrpcServices="ClientAndServer">
+	  <Link>Protos\ServerCommunicationService.proto</Link>
+	</Protobuf>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="ServerCommunicationService.proto" />
+  </ItemGroup>
 </Project>

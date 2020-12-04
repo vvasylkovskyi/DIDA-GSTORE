@@ -372,8 +372,9 @@ namespace DataStoreClient
             }
             catch
             {
-                bool canRetryOperation = HandleCrashedServer(server_id);
-                if(canRetryOperation)
+                // Server has crashed
+
+                if(CanRetryOperationAfterHandlingWithCrash(server_id))
                 {
                     Console.WriteLine(">>> Retrying <ListServer> after reattaching to new master");
                     listServer(server_id);
@@ -426,7 +427,7 @@ namespace DataStoreClient
             }
         }
 
-        private bool NotifyPartitionsAboutCrashedServerAndReattachNewMaster(string crashedServerId)
+        private void NotifyPartitionsAboutCrashedServerAndReattachNewMaster(string crashedServerId)
         {
             List<string> partitions = PartitionMapping.GetPartitionsThatContainServer(crashedServerId);
 
@@ -436,7 +437,6 @@ namespace DataStoreClient
                 Console.WriteLine(">>> Partition=" + partitionName);
                 string[] partitionNodes = PartitionMapping.GetPartitionAllNodes(partitionName);
 
-                bool newMasterWasReattachedSuccessfully = false;
                 foreach(string serverId in partitionNodes)
                 {
                     if(serverId == crashedServerId)
@@ -445,25 +445,25 @@ namespace DataStoreClient
                     }
 
                     else if (TryNotifyServerAboutCrashedServer(partitionName, serverId, crashedServerId)) {
-                        newMasterWasReattachedSuccessfully = true;
                         break;
                     }
                 }
 
-                return newMasterWasReattachedSuccessfully;
+                return;
             }
-
-            return false;
+            return;
         }
 
-        private bool HandleCrashedServer(string crashed_server_id)
+        private bool CanRetryOperationAfterHandlingWithCrash(string crashed_server_id)
         {
             Console.WriteLine("--------------------");
             Console.WriteLine(">>> CLIENT: Notify Crash... " + crashed_server_id);
             Console.WriteLine(">>> The server is not responding. It seems to have crashed. ServerID: " + crashed_server_id);
             Console.WriteLine("--------------------");
 
-            if(NotifyPartitionsAboutCrashedServerAndReattachNewMaster(crashed_server_id))
+            NotifyPartitionsAboutCrashedServerAndReattachNewMaster(crashed_server_id);
+
+            if (attached_server_id != crashed_server_id)
             {
                 PartitionMapping.RemoveCrashedServerFromAllPartitions(crashed_server_id);
                 ServerUrlMapping.RemoveCrashedServer(crashed_server_id);

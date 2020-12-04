@@ -13,6 +13,11 @@ namespace Shared.Util
             ServerUrlMapping.serverUrlMapping = serverUrlMapping;
         }
 
+        public static void RemoveCrashedServer(string crashedServerId)
+        {
+            serverUrlMapping.Remove(crashedServerId);
+        }
+
         public static void AddServerToServerUrlMapping(string serverId, string serverUrl)
         {
             if(serverUrlMapping.Count == 0)

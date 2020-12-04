@@ -8,9 +8,9 @@ namespace PCS
 {
     public class PCSImpl: PCSServices.PCSServicesBase
     {
-        ProcessCreationService processCreationService;
+        Program processCreationService;
 
-        public PCSImpl(ProcessCreationService processCreationService) => this.processCreationService = processCreationService;
+        public PCSImpl(Program processCreationService) => this.processCreationService = processCreationService;
 
         public async override Task<StartServerReply> StartServer(StartServerRequest request, ServerCallContext context)
         {

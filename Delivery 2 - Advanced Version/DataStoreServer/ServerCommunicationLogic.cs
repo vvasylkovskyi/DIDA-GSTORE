@@ -23,7 +23,7 @@ namespace DataStoreServer
             try
             {
                 Monitor.Enter(atomic_lock);
-                Console.WriteLine(">>> Replica: Atomic operation Update<clock, value> = <" + request.Clock + "," + value.val + ">");
+                Console.WriteLine(">>> Replica: Atomic operation Update<Value, Clock> = <" + value.val + "," + request.Clock + ">");
                 partition.addNewOrUpdateExisting(current_key, value);
                 partition.setClock(request.Clock);
             }
@@ -37,7 +37,6 @@ namespace DataStoreServer
                 Monitor.Exit(atomic_lock);
             }
         }
-
 
         public override Task<lockReply> LockObject(lockRequest request, ServerCallContext context)
         {
@@ -61,6 +60,32 @@ namespace DataStoreServer
             {
                 Ok = true
             });
+        }
+
+        public override Task<IsAliveReply> IsAlive(IsAliveRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(IsAliveHandler());
+        }
+
+        public override Task<NotifyReplicaAboutCrashReply> NotifyReplicaAboutCrash(NotifyReplicaAboutCrashRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(NotifyReplicaAboutCrashHandler(request));
+        }
+
+        // ---------- Handler --------------
+
+        public IsAliveReply IsAliveHandler()
+        {
+            return new IsAliveReply { Ok = true };
+        }
+
+
+        public NotifyReplicaAboutCrashReply NotifyReplicaAboutCrashHandler(NotifyReplicaAboutCrashRequest request)
+        {
+            Console.WriteLine(">>> Received Notification about crashed server...");
+            Console.WriteLine(">>> PartitionName=" + request.PartitionId + ", Crashed Server=" + request.CrashedMasterServerId);
+            CrashUtils.RemoveCrashedServerFromMyLocalPartition(request.IsMasterCrashed, request.PartitionId, request.CrashedMasterServerId);
+            return new NotifyReplicaAboutCrashReply { Ok = true };
         }
     }
 }

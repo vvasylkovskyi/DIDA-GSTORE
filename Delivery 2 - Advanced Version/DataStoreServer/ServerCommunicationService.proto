@@ -7,6 +7,8 @@ option csharp_namespace = "Shared.GrpcDataStore";
 service ServerCommunicationService {
   rpc LockObject (lockRequest) returns (lockReply);
   rpc WriteNewValue (NewValueRequest) returns (NewValueReply);
+  rpc IsAlive (IsAliveRequest) returns (IsAliveReply);
+  rpc NotifyReplicaAboutCrash (NotifyReplicaAboutCrashRequest) returns (NotifyReplicaAboutCrashReply);
 }
 
 // lock request
@@ -28,3 +30,25 @@ message NewValueRequest{
 message NewValueReply{
 	bool ok =1;
 }
+
+message IsAliveRequest{
+	string isAlive = 1;
+}
+
+message IsAliveReply{
+	bool ok = 1;
+}
+
+// NotifyCrash
+
+message NotifyReplicaAboutCrashRequest {
+	string crashed_master_server_id = 1;
+	string partition_id = 2;
+    bool is_master_crashed = 3;
+}
+
+message NotifyReplicaAboutCrashReply {
+	string masterId = 1;
+	bool ok = 2;
+}
+

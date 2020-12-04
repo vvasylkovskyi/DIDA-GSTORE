@@ -1,9 +1,4 @@
-﻿using Grpc.Net.Client;
-using Shared.GrpcDataStore;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 
 public delegate void ThrWork();
 
@@ -28,8 +23,6 @@ namespace DataStoreServer
 		public void AssyncInvoke(ThrWork action)
 		{
 			buf.Produce(action);
-
-			Console.WriteLine("Submitted action to thread pool");
 		}
 
 		public void consomeExec()
@@ -59,5 +52,4 @@ namespace DataStoreServer
 			}
 		}
 	}
-
 }

@@ -84,9 +84,9 @@ namespace DataStoreServer
 
         public void createPartition(string partition_id)
         {
-            String master_id = PartitionMapping.getPartitionMaster(partition_id);
+            string master_id = PartitionMapping.GetPartitionMaster(partition_id);
             bool is_master = master_id.Equals(server_id);
-            int partition_clock = PartitionMapping.getPartitionClock(partition_id);
+            int partition_clock = PartitionMapping.GetPartitionClock(partition_id);
 
             Partition p = new Partition(partition_id, is_master, partition_clock);
             partitions.Add(p);
@@ -122,7 +122,7 @@ namespace DataStoreServer
 
         public void dealWithServerCrash(string partition_id, string server_id)
         {
-            PartitionMapping.removePartitionMaster(partition_id);
+            PartitionMapping.RemovePartitionMaster(partition_id);
         }
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Grpc.Core;
 using Grpc.Net.Client;
 using PuppetMaster.Protos;
@@ -7,7 +6,7 @@ using Shared.Util;
 
 namespace PCS
 {
-    public class ProcessCreationService
+    public class Program
     {
         private DataStoreClient.Program client;
         private DataStoreServer.Program server;
@@ -16,10 +15,10 @@ namespace PCS
 
         public static void Main(string[] args)
         {
-            new ProcessCreationService();
+            new Program();
         }
 
-        public ProcessCreationService()
+        public Program()
         {
             // allow http traffic in grpc
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -88,6 +87,7 @@ namespace PCS
 
         public void StartServer(string[] args)
         {
+            Console.WriteLine("---------------------------------------------------------------------------");
             Console.WriteLine(">>> Starting Server...");
             DataStoreServer.Program server = new DataStoreServer.Program().StartServer(args);
             this.server = server;
@@ -96,7 +96,8 @@ namespace PCS
             // When creating a new Server Program it has no context
             // These two functions will update the new server context with the partitions and server that PCS knows
             this.server.UpdateServersContext(ServerUrlMapping.serverUrlMapping);
-            this.server.UpdatePartitionsContext(PartitionMapping.partitionToReplicationFactorMapping, PartitionMapping.partitionMapping, PartitionMapping.partitionToClockMapping);
+            this.server.UpdatePartitionsContext(PartitionMapping.partitionToReplicationFactorMapping, PartitionMapping.partitionMapping,
+                PartitionMapping.partitionToClockMapping, PartitionMapping.partitionToMasterMapping);
 
             // after updating partition information, create local partitions to store data
             this.server.CreateLocalPartitions();
@@ -104,6 +105,7 @@ namespace PCS
 
         public void StartClient(string[] args)
         {
+            Console.WriteLine("---------------------------------------------------------------------------");
             Console.WriteLine(">>> Starting Client...");
             DataStoreClient.Program client = DataStoreClient.Program.StartClientWithPCS(args);
             this.client = client;
@@ -112,7 +114,8 @@ namespace PCS
             // When creating a new Client Program it has no context
             // These two functions will update the new client context with the partitions and server that PCS knows
             this.client.UpdateServersContext(ServerUrlMapping.serverUrlMapping);
-            this.client.UpdatePartitionsContext(PartitionMapping.partitionToReplicationFactorMapping, PartitionMapping.partitionMapping, PartitionMapping.partitionToClockMapping);
+            this.client.UpdatePartitionsContext(PartitionMapping.partitionToReplicationFactorMapping, PartitionMapping.partitionMapping,
+                PartitionMapping.partitionToClockMapping, PartitionMapping.partitionToMasterMapping);
 
             string scriptFile = args[2];
             this.client.ReadScriptFile(scriptFile);

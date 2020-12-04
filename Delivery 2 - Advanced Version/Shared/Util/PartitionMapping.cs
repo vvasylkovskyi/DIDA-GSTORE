@@ -18,6 +18,7 @@ namespace Shared.Util
         public static Dictionary<string, string[]> partitionMapping = new Dictionary<string, string[]>();
         public static Dictionary<string, string> partitionToReplicationFactorMapping = new Dictionary<string, string>();
         public static Dictionary<string, int> partitionToClockMapping = new Dictionary<string, int>();
+        public static Dictionary<string, string> partitionToMasterMapping = new Dictionary<string, string>();
 
         public static string starting_replication_factor;
 
@@ -37,7 +38,7 @@ namespace Shared.Util
         {
             partitionToClockMapping[partitionName] = partitionClock;
 
-            Console.WriteLine(">>> Partition Clock updates sucessfully: Partition=" + partitionName + ", Clock=" + partitionClock);
+            Console.WriteLine(">>> Partition Clock was updated sucessfully: Partition=" + partitionName + ", Clock=" + partitionClock);
         }
 
         private static bool TryGetPartition(string partitionName, out string[] serverIds)
@@ -46,11 +47,12 @@ namespace Shared.Util
         }
 
         public static void CreatePartitionMapping(Dictionary<string, string> partitionToReplicationFactorMapping, Dictionary<string, string[]> partitionMapping,
-            Dictionary<string, int> partitionToClockMapping)
+            Dictionary<string, int> partitionToClockMapping, Dictionary<string, string> partitionToMasterMapping)
         {
             PartitionMapping.partitionToReplicationFactorMapping = partitionToReplicationFactorMapping;
             PartitionMapping.partitionMapping = partitionMapping;
             PartitionMapping.partitionToClockMapping = partitionToClockMapping;
+            PartitionMapping.partitionToMasterMapping = partitionToMasterMapping;
         }
 
         public static void CreatePartition(string replicationFactor, string partitionName, string[] serverIds)
@@ -59,38 +61,43 @@ namespace Shared.Util
 
             partitionToReplicationFactorMapping[partitionName] = replicationFactor;
             partitionToClockMapping[partitionName] = 1; // Clock starts with 1
-
+            partitionToMasterMapping[partitionName] = serverIds[0]; // At the beginnig thhe master is the first server
             if (TryGetPartition(partitionName, out string[] existingServerIds))
             {
                 partitionMapping[partitionName] = serverIds;
-
-                Console.WriteLine(">>> Partition was updated with success");
-                Console.WriteLine(">>> New partition created with success! Servers List: " + string.Join(", ", serverIds));
-                Console.WriteLine(">>> PartitionName: " + partitionName + ", Replication Factor: " + replicationFactor + ", Logical Clock: 1");
                 return;
             }
             partitionMapping.Add(partitionName, serverIds);
-            Console.WriteLine(">>> New partition created with success");
             Console.WriteLine(">>> New partition created with success! Servers List: " + string.Join(", ", serverIds));
             Console.WriteLine(">>> PartitionName: " + partitionName + ", Replication Factor: " + replicationFactor + ", Logical Clock: 1"); 
         }
 
-        public static string getPartitionMaster(string partitionName)
+        public static void SetPartitionMaster(string partitionName, string masterId)
         {
-            return partitionMapping[partitionName][0];
+            partitionToMasterMapping[partitionName] = masterId;
         }
 
-        public static int getPartitionClock(string partitionName)
+        public static string GetPartitionMaster(string partitionName)
+        {
+            return partitionToMasterMapping[partitionName];
+        }
+
+        public static bool IsMaster(string partitionName, string serverId)
+        {
+            return partitionToMasterMapping[partitionName] == serverId;
+        }
+
+        public static int GetPartitionClock(string partitionName)
         {
             return partitionToClockMapping[partitionName];
         }
 
-        public static string[] getPartitionReplicas(string partitionName)
+        public static string[] GetPartitionReplicas(string partitionName)
         {
             return partitionMapping[partitionName].Skip(1).ToArray();
         }
 
-        public static string[] getPartitionAllNodes(string partitionName)
+        public static string[] GetPartitionAllNodes(string partitionName)
         {
             return partitionMapping[partitionName].ToArray();
         }
@@ -104,6 +111,7 @@ namespace Shared.Util
                 {
                     Console.WriteLine(">>> Updating a partition " + partitionName + " That contains Server " + crashedServerId);
                     partitionMapping[partitionName] = updatedListOfServerIds;
+                    Console.WriteLine(">>> Partition Updated with success! PartitionName=" + partitionName + ", Servers List: " + string.Join(", ", partitionMapping[partitionName].ToArray()));
                 }
                 else
                 {
@@ -113,7 +121,32 @@ namespace Shared.Util
             }
         }
 
-        public static List<string> getPartitionsByServerID(string serverId)
+        public static List<string> GetPartitionsThatContainServer(string serverId)
+        {
+            List<string> partitionsWithServer = new List<string>();
+
+            foreach (KeyValuePair<string, string[]> partition in partitionMapping)
+            {
+                if(partition.Value.Contains(serverId))
+                {
+                    partitionsWithServer.Add(partition.Key);
+                }
+            }
+
+            return partitionsWithServer;
+        }
+
+        public static void RemoveCrashedServerFromAllPartitions(string serverId)
+        {
+            List<string> partitionsToUpdate = GetPartitionsThatContainServer(serverId);
+
+            foreach (string partitionName in partitionsToUpdate)
+            {
+                UpdatePartition(partitionName, serverId);
+            }
+        }
+
+        public static List<string> GetPartitionsByServerID(string serverId)
         {
             // list of partitions that use the server with serverID
             List<string> result = new List<string>();
@@ -127,7 +160,7 @@ namespace Shared.Util
             return result;
         }
 
-        public static void removePartitionMaster(string partition_id)
+        public static void RemovePartitionMaster(string partition_id)
         {
             string[] new_replicas = partitionMapping[partition_id].Skip(1).ToArray();
             partitionMapping[partition_id] = new_replicas;

@@ -36,7 +36,7 @@ namespace DataStoreServer.Domain
 
         private void updateConnectionToReplicas(string partition_id)
         {
-            string[] replicas = PartitionMapping.getPartitionReplicas(partition_id);
+            string[] replicas = PartitionMapping.GetPartitionReplicas(partition_id);
 
             foreach (string replica in replicas)
             {
@@ -105,7 +105,12 @@ namespace DataStoreServer.Domain
 
         public string getMasterID()
         {
-            return PartitionMapping.getPartitionMaster(this.id);
+            return PartitionMapping.GetPartitionMaster(this.id);
+        }
+
+        public ServerCommunicationService.ServerCommunicationServiceClient getReplicaById(string serverId)
+        {
+            return replica_clients[serverId];
         }
 
         public void lockObject(DataStoreKey key, bool locked)

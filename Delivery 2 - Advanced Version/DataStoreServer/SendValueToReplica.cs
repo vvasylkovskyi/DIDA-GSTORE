@@ -13,6 +13,11 @@ namespace DataStoreServer
         private WriteRequest request;
         private readonly string atomic_lock = "ATOMIC_LOCK";
 
+        public SendValueToReplica(ServerImp server)
+        {
+            this.server = server;
+        }
+
         public SendValueToReplica(ServerImp server, WriteRequest request) {
             this.server = server;
             this.request = request;
@@ -116,5 +121,75 @@ namespace DataStoreServer
             return new WriteReply { WriteStatus = 200 };
         }
 
+        public string ElectPartitionMaster(string partitionName, string crashedMasterServerId)
+        {
+            // TO DO LEADER ELECTION
+            // string newMasterId = LeaderElection(partitionName);
+
+            // ---- TO DO REMOVE THIS AFTER LEADER ELECTION IS DONE
+            string[] serversOfThePartitionWithoutTheCrashedServer = Shared.Util.PartitionMapping.partitionMapping[partitionName];
+            string newMasterId = serversOfThePartitionWithoutTheCrashedServer[0];
+            // -----
+
+            Shared.Util.PartitionMapping.SetPartitionMaster(partitionName, newMasterId);
+            return newMasterId;
+        }
+
+
+        public NotifyCrashReply HandleServerCrash(string partitionName, string crashedMasterServerId)
+        {
+            Console.WriteLine("--------------------");
+            Console.WriteLine(">>> SERVER: Handle Crash...");
+            Console.WriteLine("--------------------");
+            string currentMasterServerId = Shared.Util.PartitionMapping.GetPartitionMaster(partitionName);
+            Console.WriteLine(">>> Current Partition Master is: MasterId=" + currentMasterServerId);
+
+            Partition partition = server.getPartition(partitionName);
+            IsAliveReply isAliveReply = CrashUtils.CheckIfServerIsStillAlive(partition, crashedMasterServerId);
+
+            if (isAliveReply != null && isAliveReply.Ok)
+            {
+                Console.WriteLine(">>> Server is Alive! Sending back the MasterId: MasterId=" + currentMasterServerId);
+                return new NotifyCrashReply
+                {
+                    Status = "OK",
+                    MasterId = currentMasterServerId
+                };
+            }
+
+            bool isMasterCrashed = Shared.Util.PartitionMapping.IsMaster(partitionName, crashedMasterServerId);
+
+            if (isMasterCrashed)
+            {
+                // the crashed server is the previous partition master
+                Console.WriteLine(">>> The Crashed server was a master. MasterId=" + crashedMasterServerId);
+
+                CrashUtils.RemoveCrashedServerFromMyLocalPartition(isMasterCrashed, partitionName, crashedMasterServerId);
+                CrashUtils.NotifyAllReplicasAboutCrashedServer(partition, partitionName, crashedMasterServerId, isMasterCrashed);
+
+                string newMasterId = ElectPartitionMaster(partitionName, crashedMasterServerId);
+
+                return new NotifyCrashReply
+                {
+                    Status = "OK",
+                    MasterId = newMasterId
+                };
+            }
+            else
+            {
+                // the crashed server is a replica
+                Console.WriteLine(">>> The Crashed server is a replica. The Master Remain the same. MasterId=" + crashedMasterServerId);
+                CrashUtils.RemoveCrashedServerFromMyLocalPartition(isMasterCrashed, partitionName, crashedMasterServerId);
+                CrashUtils.NotifyAllReplicasAboutCrashedServer(partition, partitionName, crashedMasterServerId, isMasterCrashed);
+
+                Console.WriteLine(">>> Sending Back Current Master Id: MasterId=" + currentMasterServerId);
+                Console.WriteLine("--------------------");
+                return new NotifyCrashReply
+                {
+                    Status = "OK",
+                    MasterId = currentMasterServerId
+                };
+            }
+        }
     }
 }

@@ -1,0 +1,5 @@
+write p1 o1 "p1-o1-v1"
+write p2 o1 "p2-o1-v1"
+write p3 o1 "p3-o1-v1"
+write p4 o1 "p4-o1-v1"
+listGlobal

@@ -1,0 +1,5 @@
+read p2 o1 s4
+read p1 o1 s3
+read p2 o1 s2
+read p3 o1 s1
+listGlobal

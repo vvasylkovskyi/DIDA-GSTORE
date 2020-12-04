@@ -24,6 +24,7 @@ namespace DataStoreClient
 
         private int retry_time = 1000;
 
+
         static void Main(string[] args)
         {
             StartClientManually(args);
@@ -197,20 +198,20 @@ namespace DataStoreClient
             int partition_highest_clock = PartitionMapping.partitionToClockMapping[partition_id];
 
             Console.WriteLine(">>> PartitionClock=" + partition_highest_clock + ", ReplyClock=" + reply_clock);
-            if(reply_clock > partition_highest_clock)
+            if (reply_clock > partition_highest_clock)
             {
                 Console.WriteLine(">>> ReplyClock > PartitionClock. Reply clock is acceptable. ");
                 PartitionMapping.UpdatePartitionClock(partition_id, reply_clock);
                 return true;
             }
-            else if(reply_clock < partition_highest_clock)
+            else if (reply_clock < partition_highest_clock)
             {
                 Console.WriteLine(">>> ReplyClock < PartitionClock. Waiting " + retry_time.ToString() + "And trying again...");
                 wait(retry_time);
                 return TryReadValue(object_key, partition_id);
             }
 
-            else if(reply_clock == partition_highest_clock)
+            else if (reply_clock == partition_highest_clock)
             {
                 Console.WriteLine(">>> PartitionClock == ReplyClock. Reply clock is acceptable. ");
             }
@@ -232,6 +233,7 @@ namespace DataStoreClient
                     return CompareClock(partition_id, reply.PartitionClock, object_key);
                 }
                 // server is crashed
+                handle_crashed_server(attached_server_id);
                 return false;
             }
             catch
@@ -277,6 +279,7 @@ namespace DataStoreClient
                     // read value from alternative server
                     got_result = TryReadValue(object_key, partition_id);
                 }
+
             }
 
             // if theres no result yet, the client should find a server serving partition_id on its own
@@ -326,38 +329,43 @@ namespace DataStoreClient
             {
                 reply = client.Write(new WriteRequest { ObjectKey = object_key, Object = object_value });
                 Console.WriteLine("Write result: " + reply);
-            
             }
-            // server is crashed
             catch
             {
+                handle_crashed_server(attached_server_id);
                 return;
-                // electNewLeader(partition_id, attached_server_id);
             }
         }
 
         private void listServer(string server_id)
         {
             ListServerReply reply;
-
             string previous_attached_server = attached_server_id;
-            reattachServer(server_id);
-
-            reply = client.ListServer(new ListServerRequest { Msg = "" });
-
-            Console.WriteLine("> Start displaying objects stored in server: " + server_id);
-
-            foreach (DataStorePartitionDto partition in reply.PartitionList)
+            
+            try
             {
-                Console.WriteLine(">> Partition " + partition.PartitionId + ", is the server the master of this partition: " + partition.IsMaster);
-                foreach (DataStoreObjectDto store_object in partition.ObjectList)
-                {
-                    Console.WriteLine(store_object);
-                }
-                Console.WriteLine(">> End of partition: " + partition.PartitionId);
-            }
+                reattachServer(server_id);
+                reply = client.ListServer(new ListServerRequest { Msg = "" });
 
-            Console.WriteLine("> End of objects stored in server: " + server_id);
+                Console.WriteLine("> Start displaying objects stored in server: " + server_id);
+
+                foreach (DataStorePartitionDto partition in reply.PartitionList)
+                {
+                    Console.WriteLine(">> Partition " + partition.PartitionId + ", is the server the master of this partition: " + partition.IsMaster);
+                    foreach (DataStoreObjectDto store_object in partition.ObjectList)
+                    {
+                        Console.WriteLine(store_object);
+                    }
+                    Console.WriteLine(">> End of partition: " + partition.PartitionId);
+                }
+
+                Console.WriteLine("> End of objects stored in server: " + server_id);
+            }
+            catch
+            {
+                handle_crashed_server(server_id);
+                return;
+            }
 
             reattachServer(previous_attached_server);
         }
@@ -369,6 +377,11 @@ namespace DataStoreClient
                 listServer(server_id);
                 Console.WriteLine("----------");
             }
+        }
+
+        private void handle_crashed_server(string server_id)
+        {
+            Console.WriteLine("The server is not responding. It seems to have crashed. ServerID: " + server_id);
         }
 
         private void wait(int duration)
@@ -410,35 +423,6 @@ namespace DataStoreClient
             {
                 ReadCommandFromCommandLine(command);
             }
-        }
-
-        // the client has detected that 'attached_server_id' has failed
-        // it will send a message to the second in line for the role of master
-        private void electNewLeader(string partition_id, string crashed_server)
-        {
-            NotifyCrashReply reply = null;
-            string previous_attached_server = attached_server_id;
-
-            string[] replicas = PartitionMapping.getPartitionReplicas(partition_id);
-
-            foreach (string replica in replicas)
-            {
-                reattachServer(replica);
-                if (debug_console) Console.WriteLine("Notifying a replica about a crash...");
-
-                try
-                {
-                    reply = client.NotifyCrash(new NotifyCrashRequest { CrashedMasterServerId = crashed_server, PartitionId = partition_id });
-                    break;
-                }
-                catch
-                {
-                    continue;
-                }
-                
-            }
-
-            reattachServer(previous_attached_server);
         }
 
         private void showHelp()

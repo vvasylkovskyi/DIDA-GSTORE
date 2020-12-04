@@ -28,4 +28,3 @@ message NewValueRequest{
 message NewValueReply{
 	bool ok =1;
 }
-

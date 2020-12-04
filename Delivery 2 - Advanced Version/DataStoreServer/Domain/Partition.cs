@@ -12,11 +12,12 @@ namespace DataStoreServer.Domain
         private string id;
         private DataStore data;
         private bool connected_to_replicas = false;
-        private int clock;
         private Dictionary<string, GrpcChannel> replica_channels;
         private Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> replica_clients;
+        private int clock;
 
         public bool is_master;
+
 
         public Partition(string id, bool is_master, int partition_clock)
         {
@@ -25,7 +26,6 @@ namespace DataStoreServer.Domain
             this.data = new DataStore();
             this.replica_channels = new Dictionary<string, GrpcChannel>();
             this.replica_clients = new Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient>();
-
             this.clock = partition_clock;
         }
 

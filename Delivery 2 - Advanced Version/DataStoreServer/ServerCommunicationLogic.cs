@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DataStoreServer
 {
-    public class ServerCommunicationLogic : ServerCommunicationService.ServerCommunicationServiceBase
+    public class ServerCommunicationLogic:ServerCommunicationService.ServerCommunicationServiceBase
     {
         private ServerImp server;
         private DataStoreKey current_key;
@@ -55,9 +55,7 @@ namespace DataStoreServer
             Partition partition = server.getPartition(current_key.partition_id);
             DataStoreValue value = new DataStoreValue();
             value.val = request.Val;
-
-            AtomicWriteAndUpdateClock(request, partition, value);
-
+            partition.addNewOrUpdateExisting(current_key, value);
             partition.lockObject(current_key, false);
             return Task.FromResult(new NewValueReply
             {

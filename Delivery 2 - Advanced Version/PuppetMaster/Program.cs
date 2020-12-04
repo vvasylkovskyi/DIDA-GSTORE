@@ -49,39 +49,14 @@ namespace PuppetMaster
 
             Console.WriteLine(">>> Started Running Puppet Master");
 
-            ListenToCommands();
+            ReadCommandFromCommandLine();
         }
 
         #endregion
 
         #region read commands
 
-        private void ListenToCommands()
-        {
-            string command = "";
-            while (command != "1" || command != "2" || command != "q")
-            {
-                Console.WriteLine(">>> Press '1' to read file");
-                Console.WriteLine(">>> Press '2' to go to write command menu");
-                Console.WriteLine(">>> Press 'q' to exit");
-  
-                command = Console.ReadLine();
-                if (command == "1")
-                {
-                    ReadScriptFile();
-                }
-                else if (command == "2")
-                {
-                    ReadCommandFromCommandLine();
-                }
-                else if (command == "q")
-                {
-                    Environment.Exit(1);
-                }
-            }
-        }
-
-        private void ReadScriptFile()
+        private void ReadScriptFile(string fileName)
         {
             string command;
             Console.WriteLine(">>> Please Write file name: ");
@@ -93,8 +68,6 @@ namespace PuppetMaster
             {
                 _filePath = Utilities.getParentDir(_filePath);
             }
-
-            string fileName = Console.ReadLine();
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 fileName = _filePath + "/scripts/" + fileName;
@@ -123,7 +96,9 @@ namespace PuppetMaster
         {
             while (true)
             {
-                Console.WriteLine(">>> Please Write a command (use 'help' to get a list of available commands)");
+                Console.WriteLine(">>> Please Write a command");
+                Console.WriteLine(">>> use 'help' to get a list of available commands");
+                Console.WriteLine(">>> use 'q' to exit");
                 string command = Console.ReadLine();
                 ProcessCommand(command);
             }
@@ -210,12 +185,17 @@ namespace PuppetMaster
                     Console.WriteLine(">>> Waiting...");
                     Thread.Sleep(int.Parse(timeMs));
                     break;
+                case "script":
+                    ReadScriptFile(commandsList[1]);
+                    break;
                 case "help":
                     showHelp();
                     break;
+                case "q":
+                    Environment.Exit(1);
+                    break;
                 default:
                     Console.WriteLine("This is an invalid command:" + mainCommand);
-                    // showHelp();
                     break;
             }
         }
@@ -368,7 +348,9 @@ namespace PuppetMaster
                 {"Crash", new string[]{"server_id" } },
                 {"Freeze", new string[]{"server_id" } },
                 {"Unfreeze", new string[]{"server_id" } },
-                {"Wait", new string[]{"x_miliseconds"} }
+                {"Wait", new string[]{"x_miliseconds"} },
+                {"Script", new string[]{"script_filename"} },
+                {"q", new string[]{} }
             };
 
             Console.WriteLine("Available commands are:");

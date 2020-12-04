@@ -19,7 +19,6 @@ namespace Shared.Util
         public static Dictionary<string, string> partitionToReplicationFactorMapping = new Dictionary<string, string>();
         public static Dictionary<string, int> partitionToClockMapping = new Dictionary<string, int>();
 
-
         public static string starting_replication_factor;
 
         public static void UpdateReplicationFactor(string replicationFactor)
@@ -71,8 +70,9 @@ namespace Shared.Util
                 return;
             }
             partitionMapping.Add(partitionName, serverIds);
+            Console.WriteLine(">>> New partition created with success");
             Console.WriteLine(">>> New partition created with success! Servers List: " + string.Join(", ", serverIds));
-            Console.WriteLine(">>> PartitionName: " + partitionName + ", Replication Factor: " + replicationFactor + ", Logical Clock: 1");
+            Console.WriteLine(">>> PartitionName: " + partitionName + ", Replication Factor: " + replicationFactor + ", Logical Clock: 1"); 
         }
 
         public static string getPartitionMaster(string partitionName)

@@ -6,13 +6,6 @@ namespace Shared.Util
 {
     class PartitionMapping
     {
-        // ----------------------
-        //       ATTENTION
-        // ----------------------
-        // If you add a server to the partition mapping, do not forget to also add it to the server url mapping.
-        // Always make sure that a server id always has an entry in both dictionaries.
-
-
         // This dictionary stores the mapping between partitions and nodes.
 
         public static Dictionary<string, string[]> partitionMapping = new Dictionary<string, string[]>();

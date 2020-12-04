@@ -3,6 +3,7 @@ using DataStoreServer.Util;
 using Shared.GrpcDataStore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace DataStoreServer
@@ -51,7 +52,6 @@ namespace DataStoreServer
         public void doWork() {
             Partition partition = server.getPartition(request.ObjectKey.PartitionId);
             Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> PartitionReplicas = partition.getReplicas();
-            lockReplicas(PartitionReplicas, this.request.ObjectKey);
             atomicWriteLocallyAndUpdateClock(partition);
 
             int clock = partition.getClock();
@@ -61,26 +61,6 @@ namespace DataStoreServer
             server.setWriteResult(request,reply);
         }
 
-        public void lockReplicas(Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> replicas, DataStoreKeyDto key)
-        {
-            foreach (string replica_id in replicas.Keys)
-            {
-                try
-                {
-                    replicas[replica_id].LockObject(new lockRequest
-                    {
-                       PartitionId = key.PartitionId,
-                       ObjectId = key.ObjectId
-                    });
-                }
-                catch (Exception)
-                {
-                    Console.WriteLine("Replica cannot be reached: " + replica_id);
-                    replicas.Remove(replica_id);
-                }
-
-            }
-        }
 
         public void write_new_value_locally(Partition partition, WriteRequest request)
         {
@@ -121,18 +101,65 @@ namespace DataStoreServer
             return new WriteReply { WriteStatus = 200 };
         }
 
-        public string ElectPartitionMaster(string partitionName, string crashedMasterServerId)
+
+        public string ElectPartitionMaster(string partitionId, string crashedMasterServerId)
         {
-            // TO DO LEADER ELECTION
-            // string newMasterId = LeaderElection(partitionName);
+            Dictionary<string, int> partition_clocks = new Dictionary<string, int>();
+            string new_leader_id = "";
 
-            // ---- TO DO REMOVE THIS AFTER LEADER ELECTION IS DONE
-            string[] serversOfThePartitionWithoutTheCrashedServer = Shared.Util.PartitionMapping.partitionMapping[partitionName];
-            string newMasterId = serversOfThePartitionWithoutTheCrashedServer[0];
-            // -----
+            Partition partition = server.getPartition(partitionId);
+            Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> partitionReplicas = partition.getReplicas();
 
-            Shared.Util.PartitionMapping.SetPartitionMaster(partitionName, newMasterId);
-            return newMasterId;
+            foreach (string replica_id in partitionReplicas.Keys)
+            {
+                try
+                {
+                    ClockReply reply = partitionReplicas[replica_id].GetPartitionClock(new ClockRequest
+                    {
+                        PartitionId = partitionId,
+                    });
+
+                    partition_clocks[replica_id] = reply.Clock;
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Replica cannot be reached: " + replica_id);
+                }
+            }
+
+            if (partition_clocks.Count == 0)
+            {
+                new_leader_id = this.server.getID();
+                server.becomeLeader(partitionId);
+            }
+            else
+            {
+                // find highest clock
+                int largest_clock = partition_clocks.Values.Max();
+
+                // filter servers by their clock
+                Dictionary<string, int> valid_leaders_list = partition_clocks.Where(x => x.Value == largest_clock).ToDictionary(i => i.Key, i => i.Value);
+
+                // now to find the valid leader with highest ID
+                string[] replicas_ordered_by_id = Shared.Util.PartitionMapping.GetPartitionReplicas(partitionId);
+                for (int i = 0; i < replicas_ordered_by_id.Length; i++)
+                {
+                    string server = replicas_ordered_by_id[i];
+                    if (valid_leaders_list.Keys.Contains(server)) {
+                        new_leader_id = server;
+
+                        // send message granting permission to be a leader
+                        partitionReplicas[new_leader_id].GrantPermissionToBecomeLeader(new GrantPermissionRequest
+                        {
+                            PartitionId = partitionId,
+                        });
+
+                        break;
+                    }
+                }
+                
+            }
+            return new_leader_id;
         }
 
 
@@ -191,5 +218,6 @@ namespace DataStoreServer
                 };
             }
         }
+
     }
 }

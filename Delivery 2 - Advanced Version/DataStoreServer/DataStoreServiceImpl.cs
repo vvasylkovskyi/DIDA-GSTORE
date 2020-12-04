@@ -13,6 +13,7 @@ namespace DataStoreServer
     public class DataStoreServiceImpl : DataStoreService.DataStoreServiceBase
     {
         private ServerImp server;
+        private static readonly object _syncRoot = new object();
 
         public DataStoreServiceImpl(ServerImp server) {
             this.server = server;
@@ -122,29 +123,32 @@ namespace DataStoreServer
 
         public NotifyCrashReply NotifyCrashHandler(NotifyCrashRequest request)
         {
-            string partitionName = request.PartitionId;
-            string crashedMasterServerId = request.CrashedMasterServerId;
-            string currentMasterServerId = PartitionMapping.GetPartitionMaster(partitionName);
-            Console.WriteLine(">>> Received Message from the client about crashed server: PartitionName=" + partitionName + ", CrashedServerId=" + crashedMasterServerId);
-
-            // check if the crashed server has been dealt with already
-            string[] serversOfThePartition = PartitionMapping.partitionMapping[partitionName];
-            if(!serversOfThePartition.Contains(crashedMasterServerId))
+            lock (_syncRoot)
             {
-                // this means an election already happened and the crashed server was deleted. the current partition master is the election result
-                // another possibility is that the master detected a replica failure. In this case the partition master didn't actually change saying that it did no harm.
-                Console.WriteLine(">>> Election Process Has Already Happened, CurrentMasterServerId=" + currentMasterServerId);
-                return new NotifyCrashReply
+                string partitionName = request.PartitionId;
+                string crashedMasterServerId = request.CrashedMasterServerId;
+                string currentMasterServerId = PartitionMapping.GetPartitionMaster(partitionName);
+                Console.WriteLine(">>> Received Message from the client about crashed server: PartitionName=" + partitionName + ", CrashedServerId=" + crashedMasterServerId);
+
+                // check if the crashed server has been dealt with already
+                string[] serversOfThePartition = PartitionMapping.partitionMapping[partitionName];
+                if (!serversOfThePartition.Contains(crashedMasterServerId))
                 {
-                    Status = "OK",
-                    MasterId = currentMasterServerId
-                };
+                    // this means an election already happened and the crashed server was deleted. the current partition master is the election result
+                    // another possibility is that the master detected a replica failure. In this case the partition master didn't actually change saying that it did no harm.
+                    Console.WriteLine(">>> Election Process Has Already Happened, CurrentMasterServerId=" + currentMasterServerId);
+                    return new NotifyCrashReply
+                    {
+                        Status = "OK",
+                        MasterId = currentMasterServerId
+                    };
+                }
+
+                // confirm that server is actually crashed
+                SendValueToReplica svr = new SendValueToReplica(server);
+
+                return svr.HandleServerCrash(partitionName, crashedMasterServerId);
             }
-
-            // confirm that server is actually crashed
-            SendValueToReplica svr = new SendValueToReplica(server);
-
-            return svr.HandleServerCrash(partitionName, crashedMasterServerId);
         }
     }
 }

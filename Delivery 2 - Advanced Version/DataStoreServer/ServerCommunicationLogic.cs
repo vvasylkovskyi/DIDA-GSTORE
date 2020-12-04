@@ -12,6 +12,7 @@ namespace DataStoreServer
         private ServerImp server;
         private DataStoreKey current_key;
         private readonly string atomic_lock = "ATOMIC_LOCK";
+        private static readonly object _syncRoot = new object();
 
         public ServerCommunicationLogic(ServerImp server)
         {
@@ -22,6 +23,7 @@ namespace DataStoreServer
         {
             try
             {
+                // the server shouldn't respond to client queries during this atomic operation
                 Monitor.Enter(atomic_lock);
                 Console.WriteLine(">>> Replica: Atomic operation Update<Value, Clock> = <" + value.val + "," + request.Clock + ">");
                 partition.addNewOrUpdateExisting(current_key, value);
@@ -31,22 +33,10 @@ namespace DataStoreServer
             {
                 Console.WriteLine(">>> Exception occured during atomic write");
             }
-
             finally
             {
                 Monitor.Exit(atomic_lock);
             }
-        }
-
-        public override Task<lockReply> LockObject(lockRequest request, ServerCallContext context)
-        {
-            lock (this)
-            {
-                this.current_key = new DataStoreKey(request.PartitionId, request.ObjectId);
-                Partition p = server.getPartition(request.PartitionId);
-                p.lockObject(current_key, true);
-            }
-            return Task.FromResult(new lockReply());
         }
 
         public override Task<NewValueReply> WriteNewValue(NewValueRequest request, ServerCallContext context)
@@ -72,13 +62,27 @@ namespace DataStoreServer
             return Task.FromResult(NotifyReplicaAboutCrashHandler(request));
         }
 
+        public override Task<ClockReply> GetPartitionClock(ClockRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(GetPartitionClockHandler(request));
+        }
+
+        public override Task<GrantPermissionReply> GrantPermissionToBecomeLeader(GrantPermissionRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(GrantPermissionToBecomeLeaderHandler(request));
+        }
+
+        public override Task<SetPartitionMasterReply> SetNewPartitionMaster(SetPartitionMasterRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(SetNewPartitionMasterHandler(request));
+        }
+
         // ---------- Handler --------------
 
         public IsAliveReply IsAliveHandler()
         {
             return new IsAliveReply { Ok = true };
         }
-
 
         public NotifyReplicaAboutCrashReply NotifyReplicaAboutCrashHandler(NotifyReplicaAboutCrashRequest request)
         {
@@ -87,5 +91,25 @@ namespace DataStoreServer
             CrashUtils.RemoveCrashedServerFromMyLocalPartition(request.IsMasterCrashed, request.PartitionId, request.CrashedMasterServerId);
             return new NotifyReplicaAboutCrashReply { Ok = true };
         }
+
+        public ClockReply GetPartitionClockHandler(ClockRequest request)
+        {
+            string part = request.PartitionId;
+            int clock = server.getPartition(part).getClock();
+            return new ClockReply { Clock = clock };
+        }
+
+        public GrantPermissionReply GrantPermissionToBecomeLeaderHandler(GrantPermissionRequest request)
+        {
+            server.becomeLeader(request.PartitionId);
+            return new GrantPermissionReply { Status = "OK" };
+        }
+
+        public SetPartitionMasterReply SetNewPartitionMasterHandler(SetPartitionMasterRequest request)
+        {
+            server.setNewPartitionMaster(request.PartitionId, request.NewMasterId);
+            return new SetPartitionMasterReply { Status = "OK" };
+        }
+
     }
 }

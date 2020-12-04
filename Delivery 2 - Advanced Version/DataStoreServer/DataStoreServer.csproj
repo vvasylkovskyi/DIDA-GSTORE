@@ -22,12 +22,7 @@
 	<Protobuf Include="..\Shared\protos\DataStoreServices.proto" GrpcServices="Server" />
 	<PackageReference Include="Grpc.AspNetCore.Server" Version="2.23.2" />
 	<PackageReference Include="Grpc.Net.ClientFactory" Version="2.23.2" />
-	<Protobuf Include="ServerCommunicationService.proto" GrpcServices="ClientAndServer">
-	  <Link>Protos\ServerCommunicationService.proto</Link>
-	</Protobuf>
+	<Protobuf Include="..\Shared\protos\ServerCommunicationService.proto" GrpcServices="ClientAndServer"/>
   </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="ServerCommunicationService.proto" />
-  </ItemGroup>
 </Project>

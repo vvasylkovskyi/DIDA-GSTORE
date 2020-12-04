@@ -120,9 +120,48 @@ namespace DataStoreServer
             }
         }
 
-        public void dealWithServerCrash(string partition_id, string server_id)
+        public void setNewPartitionMaster(string partition_id, string new_master_id)
         {
+            // removeing partition master means deleting the old one and assigning the new one as a master
             PartitionMapping.RemovePartitionMaster(partition_id);
+            PartitionMapping.SetPartitionMaster(partition_id, new_master_id);
         }
+
+
+        public void becomeLeader(string partitionId)
+        {
+            // send message to all servers in partition informing them of the new leader
+
+            Partition partition = getPartition(partitionId);
+            Dictionary<string, ServerCommunicationService.ServerCommunicationServiceClient> partitionReplicas = partition.getReplicas();
+
+            foreach (string replica_id in partitionReplicas.Keys)
+            {
+                try
+                {
+                    string my_id =getID();
+                    if (replica_id.Equals(my_id))
+                    {
+                        setNewPartitionMaster(partitionId, my_id);
+                    }
+                    else
+                    {
+                        partitionReplicas[replica_id].SetNewPartitionMaster(new SetPartitionMasterRequest
+                        {
+                            PartitionId = partitionId,
+                            NewMasterId = my_id
+                        });
+                    }
+
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Replica cannot be reached: " + replica_id);
+                }
+            }
+
+        }
+
+
     }
 }

@@ -5,8 +5,12 @@ option csharp_namespace = "Shared.GrpcDataStore";
 // ----------- Server Communicatiom Service -----------
 
 service ServerCommunicationService {
-  rpc LockObject (lockRequest) returns (lockReply);
   rpc WriteNewValue (NewValueRequest) returns (NewValueReply);
+  rpc IsAlive (IsAliveRequest) returns (IsAliveReply);
+  rpc NotifyReplicaAboutCrash (NotifyReplicaAboutCrashRequest) returns (NotifyReplicaAboutCrashReply);
+  rpc GetPartitionClock (ClockRequest) returns (ClockReply);
+  rpc GrantPermissionToBecomeLeader (GrantPermissionRequest) returns (GrantPermissionReply);
+  rpc SetNewPartitionMaster (SetPartitionMasterRequest) returns (SetPartitionMasterReply);
 }
 
 // lock request
@@ -27,4 +31,54 @@ message NewValueRequest{
 
 message NewValueReply{
 	bool ok =1;
+}
+
+// is alive
+message IsAliveRequest{
+	string isAlive = 1;
+}
+
+message IsAliveReply{
+	bool ok = 1;
+}
+
+// NotifyCrash
+
+message NotifyReplicaAboutCrashRequest {
+	string crashed_master_server_id = 1;
+	string partition_id = 2;
+    bool is_master_crashed = 3;
+}
+
+message NotifyReplicaAboutCrashReply {
+	string masterId = 1;
+	bool ok = 2;
+}
+
+// replica clock request
+message ClockRequest{
+	string partition_id = 1;
+}
+
+message ClockReply{
+	int32 clock =1;
+}
+
+// grant permission to become leader
+message GrantPermissionRequest {
+	string partition_id = 1;
+}
+
+message GrantPermissionReply{
+	string status = 1;
+}
+
+// set new partition master
+message SetPartitionMasterRequest {
+	string partition_id = 1;
+	string new_master_id = 2;
+}
+
+message SetPartitionMasterReply{
+	string status = 1;
 }

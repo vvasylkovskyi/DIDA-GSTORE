@@ -13,7 +13,6 @@ namespace DataStoreServer
         private WriteRequest request;
         private readonly string atomic_lock = "ATOMIC_LOCK";
 
-
         public SendValueToReplica(ServerImp server, WriteRequest request) {
             this.server = server;
             this.request = request;

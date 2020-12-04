@@ -54,6 +54,12 @@ namespace DataStoreServer
             tpool.setFreeze(_isFrozen);
         }
 
+        public void sleepBeforeProcessingMessage(){
+            int sleepTime = Utilities.RandomNumber(min_delay, max_delay);
+            Console.WriteLine("sleeping "+ sleepTime + " before processing message");
+            Thread.Sleep(sleepTime);
+        }
+
         public Partition getPartition(string partition_id)
         {
             foreach (Partition p in partitions)

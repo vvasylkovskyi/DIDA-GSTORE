@@ -19,22 +19,25 @@ namespace DataStoreServer
         }
 
         public override Task<ReadReply> Read(ReadRequest request, ServerCallContext context)
-        {
+        {   server.sleepBeforeProcessingMessage();
             return Task.FromResult(ReadHandler(request));
         }
 
         public override Task<WriteReply> Write(WriteRequest request, ServerCallContext context)
         {
+            server.sleepBeforeProcessingMessage();
             return Task.FromResult(WriteHandler(request));
         }
 
         public override async Task<ListServerReply> ListServer(ListServerRequest request, ServerCallContext context)
-        {
+        {   
+            server.sleepBeforeProcessingMessage();
             return await Task.FromResult(ListServerHandler(request));
         }
 
         public override async Task<NotifyCrashReply> NotifyCrash(NotifyCrashRequest request, ServerCallContext context)
         {
+            server.sleepBeforeProcessingMessage();
             return await Task.FromResult(NotifyCrashHandler(request));
         }
 

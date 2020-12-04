@@ -13,6 +13,7 @@ namespace DataStoreServer
         private WriteRequest request;
         private readonly string atomic_lock = "ATOMIC_LOCK";
 
+
         public SendValueToReplica(ServerImp server, WriteRequest request) {
             this.server = server;
             this.request = request;
@@ -68,9 +69,9 @@ namespace DataStoreServer
                        ObjectId = key.ObjectId
                     });
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine("Replica cannot be reached: " + replica_id);
                     replicas.Remove(replica_id);
                 }
 
@@ -98,18 +99,18 @@ namespace DataStoreServer
                     {
                         Val = request.Object.Val,
                         Clock = clock
+
                     });
 
-                    if(newValueReply.Ok)
+                    if (newValueReply.Ok)
                     {
                         number_of_write_acks++;
                         Console.WriteLine(">>> Write Successful, ackWrite=" + number_of_write_acks);
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    Console.WriteLine(">>> Exception, the replica is probably crashed. Removing Replica=" + replica_id);
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine("Replica cannot be reached: " + replica_id);
                     replicas.Remove(replica_id);
                 }
             }

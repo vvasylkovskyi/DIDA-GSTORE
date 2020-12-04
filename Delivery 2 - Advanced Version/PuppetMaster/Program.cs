@@ -226,8 +226,13 @@ namespace PuppetMaster
             Console.WriteLine(">>> Getting Processes Status");
             foreach (PCSServices.PCSServicesClient gRPCpuppetMasterToPCSconnetion in ConnectionUtils.gRPCpuppetMasterToPCSconnetionsDictionary.Values)
             {
-                StatusReply statusReply = gRPCpuppetMasterToPCSconnetion.GlobalStatus(new StatusRequest { Localhost = "1" });
-                Console.WriteLine(statusReply.Status);
+                try {
+                    StatusReply statusReply = gRPCpuppetMasterToPCSconnetion.GlobalStatus(new StatusRequest { Localhost = "1" });
+                    Console.WriteLine(statusReply.Status);
+                } catch
+                {
+                    // Nothing to do
+                }
             };
         }
 

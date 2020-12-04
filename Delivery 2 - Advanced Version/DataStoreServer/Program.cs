@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using DataStoreServer.Domain;
+using Grpc.Core;
 using Shared.GrpcDataStore;
 using Shared.Util;
 using System;
@@ -67,9 +68,9 @@ namespace DataStoreServer
         }
 
         public void UpdatePartitionsContext(Dictionary<string, string> partitionToReplicationFactorMapping, Dictionary<string, string[]> partitionMapping,
-            Dictionary<string, int> partitionToClockMapping)
+            Dictionary<string, int> partitionToClockMapping, Dictionary<string, string> partitionToMasterMapping)
         {
-            PartitionMapping.CreatePartitionMapping(partitionToReplicationFactorMapping, partitionMapping, partitionToClockMapping);
+            PartitionMapping.CreatePartitionMapping(partitionToReplicationFactorMapping, partitionMapping, partitionToClockMapping, partitionToMasterMapping);
         }
 
         public void UpdateServersContext(Dictionary<string, string> serverUrlMapping)
@@ -79,8 +80,31 @@ namespace DataStoreServer
 
         public void GetStatus() 
         {
+            Console.WriteLine("--------------------");
             Console.WriteLine(">>> Printing status...");
-            Console.WriteLine("Role: server, ID: " + serverId + ", Frozen: " + _isFrozen + ", Num of partitions: " + server.getNumberOfPartitions());
+            Console.WriteLine("--------------------");
+            List<Partition> partitions = server.getPartitions();
+            List<string> partitionsString = new List<string>();
+            List<string> masterOfPartitions = new List<string>();
+            foreach(Partition partition in partitions)
+            {
+                if(partition.getMasterID() == serverId)
+                {
+                    masterOfPartitions.Add(partition.getName());
+                }
+                partitionsString.Add(partition.getName());
+            }
+            
+            Console.WriteLine(">>> Role: server. ID: " + serverId + ", Frozen: " + _isFrozen);
+            Console.WriteLine(">>> Partitions: " + string.Join(", ", partitionsString.ToArray()) + ", Num of partitions: " + server.getNumberOfPartitions());
+            if(masterOfPartitions.Count > 0)
+            {
+                Console.WriteLine(">>> I am Master of: " + string.Join(", ", masterOfPartitions.ToArray()));
+            } else
+            {
+                Console.WriteLine(">>> I am Replica in every partition");
+            }
+            Console.WriteLine("--------------------");
         }
 
         public void Crash() 
@@ -118,7 +142,7 @@ namespace DataStoreServer
 
         public void CreateLocalPartitions()
         {
-            List<string> partitions = PartitionMapping.getPartitionsByServerID(serverId);
+            List<string> partitions = PartitionMapping.GetPartitionsByServerID(serverId);
             
             foreach (string partition_id in partitions)
             {

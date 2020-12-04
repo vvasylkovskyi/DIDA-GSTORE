@@ -7,6 +7,7 @@ using Shared.Util;
 using System.Threading;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace DataStoreClient
 {
@@ -34,9 +35,13 @@ namespace DataStoreClient
         {
             string username = args[0];
             string clientUrl = args[1];
-            startProgram(username, clientUrl);
+            // allow http traffic in grpc
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
-            Console.WriteLine(">>> Started client process");
+            Console.WriteLine("---------------------------------------------------------------------------");
+            Console.WriteLine(">>> Started client process.");
+            Console.WriteLine(">>> clientID= " + username + "; url= " + clientUrl);
+            Console.WriteLine(">>> I'm ready to work");
 
             if (!fromPCS) {
                 readCommandsLoop();
@@ -63,20 +68,10 @@ namespace DataStoreClient
             }
         }
 
-        private void startProgram(string username, string clientUrl)
-        {
-            // allow http traffic in grpc
-            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-            Console.WriteLine("I'm ready to work");
-
-            if (debug_console)
-                Console.WriteLine("clientID= " + username + "; url= " + clientUrl);
-        }
-
         public void UpdatePartitionsContext(Dictionary<string, string> partitionToReplicationFactorMapping, Dictionary<string, string[]> partitionMapping,
-            Dictionary<string, int> partitionToClockMapping)
+            Dictionary<string, int> partitionToClockMapping, Dictionary<string, string> partitionToMasterMapping)
         {
-            PartitionMapping.CreatePartitionMapping(partitionToReplicationFactorMapping, partitionMapping, partitionToClockMapping);
+            PartitionMapping.CreatePartitionMapping(partitionToReplicationFactorMapping, partitionMapping, partitionToClockMapping, partitionToMasterMapping);
         }
 
         public void UpdateServersContext(Dictionary<string, string> serverUrlMapping)
@@ -232,12 +227,20 @@ namespace DataStoreClient
                     Console.WriteLine(">>> Read Result: " + result);
                     return CompareClock(partition_id, reply.PartitionClock, object_key);
                 }
-                // server is crashed
-                handle_crashed_server(attached_server_id);
+
+                Console.WriteLine(">>> Object does not exist...");
                 return false;
             }
             catch
             {
+                // server is crashed
+                bool canRetryOperation = HandleCrashedServer(attached_server_id);
+                if (canRetryOperation)
+                {
+                    Console.WriteLine(">>> Retrying <Read> after reattaching to new master");
+                    TryReadValue(object_key, partition_id);
+                }
+
                 return false;
             }
         }
@@ -257,7 +260,7 @@ namespace DataStoreClient
             Console.WriteLine(">>> Read request...");
 
             // if the client is attached to a server and that server contains the desired partition
-            List<string> available_partitions_in_server = PartitionMapping.getPartitionsByServerID(attached_server_id);
+            List<string> available_partitions_in_server = PartitionMapping.GetPartitionsByServerID(attached_server_id);
             if (!string.IsNullOrEmpty(attached_server_id) && available_partitions_in_server.Contains(partition_id))
             {
                 if (debug_console) Console.WriteLine("Reading from the Attached Server: " + attached_server_id);
@@ -270,7 +273,7 @@ namespace DataStoreClient
             if ((!got_result) && (!server_id.Equals("-1")))
             {
                 // check if the server hint even has the partition
-                available_partitions_in_server = PartitionMapping.getPartitionsByServerID(server_id);
+                available_partitions_in_server = PartitionMapping.GetPartitionsByServerID(server_id);
                 if (available_partitions_in_server.Contains(partition_id))
                 {
                     if (debug_console) Console.WriteLine("Attach to new Server: " + server_id);
@@ -286,7 +289,7 @@ namespace DataStoreClient
             // it will try to connect to every single node in that partition
             if (!got_result)
             {
-                string[] partition_nodes = PartitionMapping.getPartitionAllNodes(partition_id);
+                string[] partition_nodes = PartitionMapping.GetPartitionAllNodes(partition_id);
 
                 foreach (string node_id in partition_nodes)
                 {
@@ -308,7 +311,7 @@ namespace DataStoreClient
         {
             WriteReply reply;
             if (debug_console) Console.WriteLine("Get Partition Master from Partition Named: " + partition_id);
-            string partition_master_server_id = PartitionMapping.getPartitionMaster(partition_id);
+            string partition_master_server_id = PartitionMapping.GetPartitionMaster(partition_id);
             if (debug_console) Console.WriteLine("Partition Master Server ID: " + partition_master_server_id);
             reattachServer(partition_master_server_id);
 
@@ -332,7 +335,13 @@ namespace DataStoreClient
             }
             catch
             {
-                handle_crashed_server(attached_server_id);
+                bool canRetryOperation = HandleCrashedServer(attached_server_id);
+                if (canRetryOperation)
+                {
+                    Console.WriteLine(">>> Retrying <Write> after reattaching to new master");
+                    write(partition_id, object_id, value);
+                }
+
                 return;
             }
         }
@@ -363,7 +372,13 @@ namespace DataStoreClient
             }
             catch
             {
-                handle_crashed_server(server_id);
+                bool canRetryOperation = HandleCrashedServer(server_id);
+                if(canRetryOperation)
+                {
+                    Console.WriteLine(">>> Retrying <ListServer> after reattaching to new master");
+                    listServer(server_id);
+                }
+
                 return;
             }
 
@@ -379,9 +394,84 @@ namespace DataStoreClient
             }
         }
 
-        private void handle_crashed_server(string server_id)
+
+        private bool TryNotifyServerAboutCrashedServer(string partitionName, string serverId, string crashedServerId)
         {
-            Console.WriteLine("The server is not responding. It seems to have crashed. ServerID: " + server_id);
+            Console.WriteLine(">>> Notifying Server=" + serverId + " about CrashedServer=" + crashedServerId);
+
+            try
+            {
+                reattachServer(serverId);
+                NotifyCrashReply notifyCrashReply = client.NotifyCrash(new NotifyCrashRequest { PartitionId = partitionName, CrashedMasterServerId = crashedServerId });
+                Console.WriteLine(">>> Got Reply from ServerId=" + serverId);
+                Console.WriteLine(">>> New Partition Master: PartitionName=" + partitionName + "PartitionMasterId=" + notifyCrashReply.MasterId);
+                string masterId = notifyCrashReply.MasterId;
+
+                PartitionMapping.SetPartitionMaster(partitionName, masterId);
+
+                if(serverId != masterId)
+                {
+                    Console.WriteLine(">>> Reataching to new master. MasterId=" + masterId);
+                    reattachServer(masterId);
+                } else
+                {
+                    Console.WriteLine(">>> Already Attached to new master. MasterId=" + masterId);
+                }
+                return true;
+            }
+            catch
+            {
+                Console.WriteLine(">>> No Reply...");
+                return false;
+            }
+        }
+
+        private bool NotifyPartitionsAboutCrashedServerAndReattachNewMaster(string crashedServerId)
+        {
+            List<string> partitions = PartitionMapping.GetPartitionsThatContainServer(crashedServerId);
+
+            foreach(string partitionName in partitions)
+            {
+                Console.WriteLine(">>> Notify Servers in Partition about Crash...");
+                Console.WriteLine(">>> Partition=" + partitionName);
+                string[] partitionNodes = PartitionMapping.GetPartitionAllNodes(partitionName);
+
+                bool newMasterWasReattachedSuccessfully = false;
+                foreach(string serverId in partitionNodes)
+                {
+                    if(serverId == crashedServerId)
+                    {
+                        continue; // Skip crashed server
+                    }
+
+                    else if (TryNotifyServerAboutCrashedServer(partitionName, serverId, crashedServerId)) {
+                        newMasterWasReattachedSuccessfully = true;
+                        break;
+                    }
+                }
+
+                return newMasterWasReattachedSuccessfully;
+            }
+
+            return false;
+        }
+
+        private bool HandleCrashedServer(string crashed_server_id)
+        {
+            Console.WriteLine("--------------------");
+            Console.WriteLine(">>> CLIENT: Notify Crash... " + crashed_server_id);
+            Console.WriteLine(">>> The server is not responding. It seems to have crashed. ServerID: " + crashed_server_id);
+            Console.WriteLine("--------------------");
+
+            if(NotifyPartitionsAboutCrashedServerAndReattachNewMaster(crashed_server_id))
+            {
+                PartitionMapping.RemoveCrashedServerFromAllPartitions(crashed_server_id);
+                ServerUrlMapping.RemoveCrashedServer(crashed_server_id);
+                Console.WriteLine("--------------------");
+                return true;
+            }
+
+            return false;
         }
 
         private void wait(int duration)
@@ -521,8 +611,12 @@ namespace DataStoreClient
 
         public void GetStatus()
         {
+            Console.WriteLine("--------------------");
             Console.WriteLine(">>> Printing status...");
-            Console.WriteLine("Role: client, Attached server: " + attached_server_id);
+            Console.WriteLine("--------------------");
+            Console.WriteLine(">>> Role: client, Attached server: " + attached_server_id);
+            Console.WriteLine("   ");
+            Console.WriteLine("--------------------");
         }
 
         private void exitProgram()

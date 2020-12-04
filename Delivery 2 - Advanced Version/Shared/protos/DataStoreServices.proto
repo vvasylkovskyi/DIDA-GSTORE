@@ -74,5 +74,6 @@ message NotifyCrashRequest {
 }
 
 message NotifyCrashReply {
-	string status = 1;
+	string masterId = 1;
+	string status = 2;
 }
